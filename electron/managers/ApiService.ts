@@ -96,7 +96,9 @@ export class ApiService {
     if (params.messageId) query.set('messageId', String(params.messageId));
     if (params.key) query.set('key', params.key);
     query.set('scene', String(params.scene));
-    return this.request({ method: 'GET', path: `/api/need-login/device/message/list-v2?${query}` });
+    const path = `/api/need-login/device/message/list-v2?${query}`;
+    logger.info(`getMessageList: ${path}`);
+    return this.request({ method: 'GET', path });
   }
 
   static async markRead(messageIds: number[], read: boolean): Promise<void> {

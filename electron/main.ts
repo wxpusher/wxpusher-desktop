@@ -47,6 +47,7 @@ app.whenReady().then(async () => {
   // 先注册 ready-to-show，再 loadURL，避免事件丢失
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
+    mainWindow?.webContents.openDevTools({ mode: 'detach' });
   });
 
   if (credential?.deviceToken) {

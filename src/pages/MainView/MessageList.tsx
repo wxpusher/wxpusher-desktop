@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { RefreshCw, Trash2, CheckCheck, X, Search } from 'lucide-react';
-import { Modal } from 'antd';
+import { Modal, Spin } from 'antd';
 import { useAppStore } from '../../stores/appStore';
 import { getRelativeDateTime } from '../../utils/time';
 import type { MessageItem } from '../../types';
@@ -41,6 +41,7 @@ export default function MessageList({ onSelect, onLoadMore, onRefresh }: Props) 
 
   // 执行搜索
   const doSearch = useCallback(async (keyword: string) => {
+    console.log('[Search] doSearch called, keyword:', keyword);
     if (!keyword.trim()) {
       setSearchResults([]);
       setHasSearched(false);
@@ -53,8 +54,10 @@ export default function MessageList({ onSelect, onLoadMore, onRefresh }: Props) 
         key: keyword.trim(),
         scene: 4,
       });
+      console.log('[Search] results:', data?.length, 'items');
       setSearchResults(data || []);
-    } catch {
+    } catch (err) {
+      console.error('[Search] error:', err);
       setSearchResults([]);
     }
   }, []);
@@ -356,6 +359,19 @@ export default function MessageList({ onSelect, onLoadMore, onRefresh }: Props) 
           data={displayList}
           endReached={searchMode ? undefined : onLoadMore}
           overscan={200}
+          components={{
+            Footer: () =>
+              !searchMode ? (
+                hasMore && isLoading ? (
+                  <div className="list-loading-footer">
+                    <Spin size="small" />
+                    <span>加载中...</span>
+                  </div>
+                ) : !hasMore && displayList.length > 0 ? (
+                  <div className="list-loading-footer">只保留最近7天数据，已经加载完成</div>
+                ) : null
+              ) : null,
+          }}
           itemContent={(index, msg) => (
             <div
               key={msg.messageId}
@@ -403,15 +419,6 @@ export default function MessageList({ onSelect, onLoadMore, onRefresh }: Props) 
           </svg>
           <div className="title">{searchMode ? '没有匹配的消息' : '暂无消息'}</div>
           {!searchMode && <div className="link">为什么我收不到消息？</div>}
-        </div>
-      )}
-
-      {/* 加载更多 */}
-      {!searchMode && hasMore && displayList.length > 0 && (
-        <div className="load-more">
-          <button onClick={onLoadMore} disabled={isLoading}>
-            {isLoading ? '加载中...' : '加载更多'}
-          </button>
         </div>
       )}
 

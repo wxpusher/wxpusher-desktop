@@ -706,30 +706,14 @@ button {
 }
 
 /* Load more */
-.load-more {
+.list-loading-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
   padding: var(--spacing-md);
-  text-align: center;
-
-  button {
-    background: transparent;
-    border: 1px solid var(--color-border);
-    color: var(--color-text-secondary);
-    padding: 6px 24px;
-    border-radius: var(--radius-sm);
-    font-size: var(--font-size-sm);
-    cursor: pointer;
-    transition: all 0.15s;
-
-    &:hover {
-      border-color: var(--color-primary);
-      color: var(--color-primary);
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
 }
 
 /* ========================================
