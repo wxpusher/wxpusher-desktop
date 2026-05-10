@@ -61,6 +61,8 @@ export function registerIpcHandlers(): void {
         deviceUuid: result.deviceUuid,
         pushToken: pushToken || undefined,
       });
+      // 登录成功后，上报 pushToken 到服务端（之前未登录时跳过了）
+      WsManager.reportPushTokenIfNeeded();
     }
     return result;
   });

@@ -3,6 +3,7 @@ import { ipcMain } from 'electron';
 import { WindowManager } from './WindowManager';
 import { PreferencesManager } from './PreferencesManager';
 import { CredentialManager } from './CredentialManager';
+import { NotificationManager } from './NotificationManager';
 import { ApiService } from './ApiService';
 import { getDesktopPlatform, getAppVersion } from '../utils/platform';
 import { logger } from '../utils/logger';
@@ -100,7 +101,8 @@ class WsManagerClass {
         const raw = data.toString();
         try {
           const msg = JSON.parse(raw);
-          logger.info(`WS 收到消息: msgType=${msg.msgType} pushToken=${(msg as any).pushToken || '-'} msg=${(msg as any).msg || '-'}`);
+          const logDetail = msg.msgType === 20001 ? `mid=${msg.mid} title=${msg.title}` : `pushToken=${(msg as any).pushToken || '-'} msg=${(msg as any).msg || '-'}`;
+          logger.info(`WS 收到消息: msgType=${msg.msgType} ${logDetail}`);
         } catch {}
         this.handleMessage(raw);
       });
@@ -155,13 +157,23 @@ class WsManagerClass {
         }
         case WsMsgType.PUSH_NOTE: {
           const pushMsg = msg as WsPushNoteMsg;
-          WindowManager.sendToRenderer('ws:new-message', pushMsg);
-          const { NotificationManager } = require('./NotificationManager');
-          NotificationManager.showNotification({
-            title: pushMsg.title || 'WxPusher',
-            body: pushMsg.summary?.substring(0, 100) || '',
-            messageId: pushMsg.mid,
-          });
+          logger.info(`PUSH_NOTE 收到: mid=${pushMsg.mid} title=${pushMsg.title} summary=${pushMsg.summary?.substring(0, 50)}`);
+          try {
+            WindowManager.sendToRenderer('ws:new-message', pushMsg);
+            logger.info('PUSH_NOTE 已发送到 renderer');
+          } catch (e) {
+            logger.warn('PUSH_NOTE 发送到 renderer 失败:', e);
+          }
+          try {
+            NotificationManager.showNotification({
+              title: pushMsg.title || 'WxPusher',
+              body: pushMsg.summary?.substring(0, 100) || '',
+              messageId: pushMsg.mid,
+            });
+            logger.info('PUSH_NOTE 通知已调用');
+          } catch (e) {
+            logger.warn('PUSH_NOTE 通知失败:', e);
+          }
           break;
         }
         case WsMsgType.ERROR_MSG: {
@@ -222,12 +234,15 @@ class WsManagerClass {
       logger.info('未登录，跳过 pushToken 上报');
       return;
     }
+    logger.info(`开始上报 pushToken: ${pushToken.substring(0, 12)}...`);
     const delays = [5_000, 15_000, 45_000];
     for (let i = 0; i < 3; i++) {
       try {
         await ApiService.updateDeviceInfo({ pushToken });
+        logger.info('pushToken 上报成功');
         return;
-      } catch {
+      } catch (err: any) {
+        logger.warn(`pushToken 上报失败 (${i + 1}/3): code=${err?.code} msg=${err?.message}`);
         if (i < 2) await sleep(delays[i]);
       }
     }
@@ -325,6 +340,13 @@ class WsManagerClass {
 
   hasPushToken(): boolean {
     return !!this.pushToken;
+  }
+
+  // 登录成功后调用，上报 pushToken 到服务端
+  async reportPushTokenIfNeeded(): Promise<void> {
+    if (this.pushToken) {
+      await this.reportPushToken(this.pushToken);
+    }
   }
 }
 

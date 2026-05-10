@@ -12,7 +12,9 @@ class NotificationManagerClass {
   }
 
   showNotification(options: { title: string; body: string; messageId: number }): void {
+    logger.info(`showNotification: mode=${this.notificationMode} title=${options.title}`);
     if (this.notificationMode === 'badge_only' || this.notificationMode === 'muted') {
+      logger.info('通知被抑制: mode=' + this.notificationMode);
       this.updateBadge();
       return;
     }

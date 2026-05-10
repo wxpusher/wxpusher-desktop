@@ -7,8 +7,8 @@ export function setupCsp(): void {
   // 主窗口 CSP（dev 模式放宽以支持 Vite HMR）
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const csp = isDev
-      ? "default-src 'self' 'unsafe-inline' 'unsafe-eval' ws: http://localhost:* https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:*; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http:; frame-src 'self' https: http:"
-      : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-src 'self' https:";
+      ? "default-src 'self' 'unsafe-inline' 'unsafe-eval' ws: http://localhost:* https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://static.zjiecode.com https://wxpusher.zjiecode.com http://wxpusher.test.zjiecode.com https://sdk.51.la; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http:; frame-src 'self' https: http:"
+      : "default-src 'self'; script-src 'self' https://static.zjiecode.com https://wxpusher.zjiecode.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-src 'self' https:";
     callback({
       responseHeaders: {
         ...details.responseHeaders,
