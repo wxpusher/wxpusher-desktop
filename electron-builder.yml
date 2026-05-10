@@ -1,0 +1,55 @@
+appId: com.smjcco.wxpusher.desktop
+productName: WxPusher
+copyright: Copyright © 2026 四川思明今创科技有限公司
+
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - package.json
+
+extraResources:
+  - from: resources/
+    to: resources/
+
+mac:
+  category: public.app-category.productivity
+  icon: resources/icon.icns
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  target:
+    - dmg
+    - zip
+  notarize: false
+
+win:
+  icon: resources/icon.ico
+  target:
+    - nsis
+    - portable
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+
+linux:
+  icon: resources/icon.png
+  category: Utility
+  target:
+    - AppImage
+    - deb
+    - rpm
+  desktop:
+    Name: WxPusher
+    Comment: WxPusher 消息推送平台桌面客户端
+    MimeType: x-scheme-handler/wxpusher
+    StartupWMClass: wxpusher-desktop
+
+publish:
+  provider: generic
+  url: https://wxpusher.zjiecode.com/download/

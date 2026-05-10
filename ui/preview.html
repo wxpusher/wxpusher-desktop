@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WxPusher Desktop - UI Preview</title>
+<style>
+/* ============================================================
+ * Design Tokens (from design-tokens.css)
+ * ============================================================ */
+:root {
+  --color-primary: #B300B3;
+  --color-primary-hover: #9B009B;
+  --color-primary-active: #850085;
+  --color-primary-bg: #F9E6F9;
+  --color-primary-dark: #430043;
+  --color-bg-page: #FAFBFE;
+  --color-bg-container: #FFFFFF;
+  --color-bg-elevated: #F8F9FC;
+  --color-bg-sidebar: #F7F7FA;
+  --color-bg-hover: #F5F5F8;
+  --color-bg-active: #EDEDF2;
+  --color-bg-mask: rgba(0, 0, 0, 0.45);
+  --color-text-primary: #1F1F1F;
+  --color-text-secondary: #686868;
+  --color-text-tertiary: #999999;
+  --color-text-inverse: #FFFFFF;
+  --color-text-link: #B300B3;
+  --color-border: #EEEEEE;
+  --color-border-light: #F0F0F0;
+  --color-divider: #EEEEEE;
+  --color-success: #4CAF50;
+  --color-success-bg: #E8F5E9;
+  --color-warning: #FF9800;
+  --color-warning-bg: #FFF3E0;
+  --color-error: #F44336;
+  --color-error-bg: #FFEBEE;
+  --color-info: #2196F3;
+  --color-info-bg: #E3F2FD;
+  --color-wechat: #07C160;
+  --color-focus-ring: #B300B3;
+  --color-banner-warning-bg: #FFF3E0;
+  --color-banner-warning-text: #5D4037;
+  --color-banner-error-bg: #FFEBEE;
+  --color-banner-error-text: #B71C1C;
+  --color-unread-bar: #2196F3;
+  --color-status-online: #4CAF50;
+  --color-status-connecting: #FF9800;
+  --color-status-offline: #F44336;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-base: 16px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 40px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-base: 10px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.10);
+  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --sidebar-width: 220px;
+  --sidebar-collapsed: 56px;
+  --list-pane-width: 360px;
+  --toolbar-height: 48px;
+  --list-item-height: 84px;
+}
+
+html.dark {
+  --color-primary: #DA5ADA;
+  --color-primary-hover: #E470E4;
+  --color-primary-active: #D040D0;
+  --color-primary-bg: #3A153A;
+  --color-primary-dark: #2D002D;
+  --color-bg-page: #121212;
+  --color-bg-container: #1E1E1E;
+  --color-bg-elevated: #252525;
+  --color-bg-sidebar: #1A1A1A;
+  --color-bg-hover: #2A2A2A;
+  --color-bg-active: #333333;
+  --color-bg-mask: rgba(0, 0, 0, 0.65);
+  --color-text-primary: #E8E8E8;
+  --color-text-secondary: #999999;
+  --color-text-tertiary: #666666;
+  --color-text-inverse: #1F1F1F;
+  --color-text-link: #DA5ADA;
+  --color-border: #3A3A3A;
+  --color-border-light: #2E2E2E;
+  --color-divider: #333333;
+  --color-success: #66BB6A;
+  --color-success-bg: #1B3A1C;
+  --color-warning: #FFA726;
+  --color-warning-bg: #3A2A10;
+  --color-error: #EF5350;
+  --color-error-bg: #3A1515;
+  --color-info: #42A5F5;
+  --color-info-bg: #152A3A;
+  --color-wechat: #2DD47A;
+  --color-focus-ring: #DA5ADA;
+  --color-banner-warning-bg: #3A2A10;
+  --color-banner-warning-text: #FFCC80;
+  --color-banner-error-bg: #3A1515;
+  --color-banner-error-text: #EF9A9A;
+  --color-unread-bar: #42A5F5;
+  --color-status-online: #66BB6A;
+  --color-status-connecting: #FFA726;
+  --color-status-offline: #EF5350;
+}
+
+/* ============================================================
+ * Reset & Base
+ * ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  background: #888;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px;
+  gap: 40px;
+  min-height: 100vh;
+}
+h1 { font-size: 20px; color: #fff; text-align: center; }
+h2 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-base);
+}
+.label {
+  font-size: 12px;
+  color: #ccc;
+  text-align: center;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================
+ * Theme Toggle (floating)
+ * ============================================================ */
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  background: var(--color-bg-container);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.25s;
+}
+.theme-toggle:hover { background: var(--color-bg-hover); }
+
+/* ============================================================
+ * Section wrapper
+ * ============================================================ */
+.section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 1280px;
+}
+
+/* ============================================================
+ * 1. LOGIN PAGE
+ * ============================================================ */
+.login-page {
+  width: 100%;
+  max-width: 1200px;
+  height: 700px;
+  background: var(--color-bg-page);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-xl);
+  position: relative;
+}
+.login-card {
+  width: 400px;
+  background: var(--color-bg-container);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-3xl) var(--spacing-2xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xl);
+}
+.login-logo {
+  width: 64px;
+  height: 64px;
+  background: var(--color-primary);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+}
+.login-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+.login-agreement {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  width: 100%;
+}
+.login-agreement input[type="checkbox"] {
+  accent-color: var(--color-primary);
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+}
+.login-agreement a {
+  color: var(--color-text-link);
+  text-decoration: none;
+}
+.login-qr-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) 0;
+}
+.login-qr {
+  width: 200px;
+  height: 200px;
+  background: #f0f0f0;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+html.dark .login-qr { background: #2a2a2a; }
+/* Fake QR pattern */
+.login-qr::before {
+  content: '';
+  width: 160px;
+  height: 160px;
+  background:
+    repeating-conic-gradient(var(--color-text-primary) 0% 25%, transparent 0% 50%)
+    0 0 / 16px 16px;
+  opacity: 0.15;
+  border-radius: var(--radius-xs);
+}
+.login-qr::after {
+  content: 'QR';
+  position: absolute;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+}
+.login-qr-tip {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+.login-countdown {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+.login-countdown a {
+  color: var(--color-text-link);
+  text-decoration: none;
+  cursor: pointer;
+}
+.login-footer a {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-link);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+/* Status badge on login page */
+.login-status {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.status-dot.online { background: var(--color-status-online); }
+.status-dot.connecting { background: var(--color-status-connecting); }
+.status-dot.offline { background: var(--color-status-offline); }
+
+/* --- Connection status text in toolbar --- */
+.ws-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-light);
+  white-space: nowrap;
+  cursor: default;
+}
+.ws-status .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.ws-status .dot.online { background: var(--color-status-online); }
+.ws-status .dot.connecting { background: var(--color-status-connecting); }
+.ws-status .dot.offline { background: var(--color-status-offline); }
+.ws-status.online { color: var(--color-status-online); }
+.ws-status.connecting { color: var(--color-status-connecting); }
+.ws-status.offline { color: var(--color-status-offline); }
+
+/* ============================================================
+ * 2. MAIN VIEW
+ * ============================================================ */
+.main-view {
+  width: 100%;
+  max-width: 1200px;
+  height: 700px;
+  background: var(--color-bg-page);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xl);
+}
+
+/* --- Titlebar (macOS style) --- */
+.titlebar {
+  height: 52px;
+  background: var(--color-bg-container);
+  border-bottom: 1px solid var(--color-divider);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-base);
+  flex-shrink: 0;
+  position: relative;
+}
+.traffic-lights {
+  display: flex;
+  gap: 8px;
+  margin-right: var(--spacing-base);
+}
+.traffic-lights span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.traffic-lights .red { background: #FF5F57; }
+.traffic-lights .yellow { background: #FEBC2E; }
+.traffic-lights .green { background: #28C840; }
+
+/* --- Toolbar (inside titlebar, right side) --- */
+.toolbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+.toolbar-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: background 0.15s;
+}
+.toolbar-btn:hover { background: var(--color-bg-hover); }
+.toolbar-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+.search-box {
+  width: 240px;
+  height: 32px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+.search-box svg { width: 14px; height: 14px; stroke: var(--color-text-tertiary); fill: none; stroke-width: 2; flex-shrink: 0; }
+.search-box span { color: var(--color-text-tertiary); }
+
+/* --- Body (sidebar + content) --- */
+.body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--color-bg-sidebar);
+  border-right: 1px solid var(--color-divider);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding: var(--spacing-base) 0;
+}
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: 0 var(--spacing-base) var(--spacing-base);
+  border-bottom: 1px solid var(--color-divider);
+  margin-bottom: var(--spacing-md);
+  cursor: pointer;
+}
+.sidebar-user:hover .user-name { color: var(--color-primary); }
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+.user-name {
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  transition: color 0.15s;
+}
+.sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--spacing-sm);
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: 10px var(--spacing-md);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  transition: all 0.15s;
+  position: relative;
+  border: 2px solid transparent;
+}
+.nav-item:hover { background: var(--color-bg-hover); color: var(--color-text-primary); }
+.nav-item.active {
+  color: var(--color-primary);
+  background: var(--color-bg-container);
+  font-weight: 500;
+}
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: var(--color-primary);
+  border-radius: 0 2px 2px 0;
+}
+.nav-item:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+.nav-item svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+.sidebar-footer {
+  padding: var(--spacing-sm);
+  border-top: 1px solid var(--color-divider);
+  margin-top: auto;
+}
+.collapse-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  margin: 0 auto;
+}
+.collapse-btn:hover { background: var(--color-bg-hover); color: var(--color-text-primary); }
+.collapse-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+/* --- Multi-select checkbox --- */
+.msg-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-xs);
+  border: 2px solid var(--color-border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  align-self: center;
+}
+.msg-checkbox:hover { border-color: var(--color-primary); }
+.msg-checkbox.checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.msg-checkbox.checked::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+.msg-item.selected { background: var(--color-primary-bg); }
+
+/* --- List pane header with refresh --- */
+.list-pane-header {
+  padding: var(--spacing-md) var(--spacing-base);
+  border-bottom: 1px solid var(--color-divider);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: var(--spacing-sm);
+}
+.list-pane-header .refresh-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+.list-pane-header .refresh-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.list-pane-header .refresh-btn:hover { background: var(--color-bg-hover); color: var(--color-primary); }
+.list-pane-header .refresh-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+/* --- Content Area --- */
+.content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* --- Banners --- */
+.banner-offline {
+  background: var(--color-banner-warning-bg);
+  color: var(--color-banner-warning-text);
+  padding: 8px var(--spacing-base);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+.banner-offline svg { width: 16px; height: 16px; stroke: var(--color-warning); fill: none; stroke-width: 2; flex-shrink: 0; }
+.banner-offline button {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--color-banner-warning-text);
+  color: var(--color-banner-warning-text);
+  padding: 2px 12px;
+  border-radius: var(--radius-xs);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+.banner-error {
+  background: var(--color-banner-error-bg);
+  color: var(--color-banner-error-text);
+  padding: 8px var(--spacing-base);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+.banner-error svg { width: 16px; height: 16px; stroke: var(--color-error); fill: none; stroke-width: 2; flex-shrink: 0; }
+.banner-error button {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--color-banner-error-text);
+  color: var(--color-banner-error-text);
+  padding: 2px 12px;
+  border-radius: var(--radius-xs);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+.banner-error button.ignore {
+  border-color: transparent;
+  color: var(--color-text-tertiary);
+}
+
+/* --- Message List Pane --- */
+.list-pane {
+  width: var(--list-pane-width);
+  border-right: 1px solid var(--color-divider);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  background: var(--color-bg-container);
+  overflow: hidden;
+}
+/* list-pane-header styles defined above */
+.list-items {
+  flex: 1;
+  overflow-y: auto;
+}
+/* Banner in list */
+.list-banner {
+  background: var(--color-primary-bg);
+  padding: 10px var(--spacing-base);
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-divider);
+}
+.list-banner .close-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+/* Message Item */
+.msg-item {
+  height: var(--list-item-height);
+  padding: var(--spacing-md) var(--spacing-base);
+  border-bottom: 1px solid var(--color-divider);
+  cursor: pointer;
+  display: flex;
+  gap: var(--spacing-md);
+  transition: background 0.15s;
+  position: relative;
+  border: 2px solid transparent;
+}
+.msg-item:hover { background: var(--color-bg-hover); }
+.msg-item.active { background: var(--color-bg-active); }
+.msg-item:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+.msg-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 6px rgba(179, 0, 179, 0.4);
+  flex-shrink: 0;
+  align-self: center;
+}
+.msg-read-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  flex-shrink: 0;
+  align-self: center;
+}
+.msg-read-bar {
+  width: 4px;
+  flex-shrink: 0;
+}
+.msg-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.msg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.msg-sender {
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.msg-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  margin-left: var(--spacing-sm);
+}
+.msg-summary {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Selection bar */
+.selection-bar {
+  background: var(--color-primary-bg);
+  padding: 8px var(--spacing-base);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--color-divider);
+}
+.selection-bar button {
+  padding: 4px 12px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--color-primary);
+  background: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.selection-bar button:hover { background: var(--color-primary); color: #fff; }
+.selection-bar button.cancel {
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+.selection-bar button.cancel:hover { background: var(--color-bg-hover); color: var(--color-text-primary); }
+/* Load more */
+.load-more {
+  padding: var(--spacing-md);
+  text-align: center;
+}
+.load-more button {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  padding: 6px 24px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.load-more button:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+/* --- Detail Pane --- */
+.detail-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-container);
+  overflow: hidden;
+}
+.detail-header {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid var(--color-divider);
+  flex-shrink: 0;
+}
+.detail-title {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
+}
+.detail-info-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px var(--spacing-base);
+  font-size: var(--font-size-sm);
+}
+.detail-info-label {
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+.detail-info-value {
+  color: var(--color-text-primary);
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: var(--font-size-xs);
+}
+.detail-info-value.text {
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+}
+.detail-summary {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid var(--color-divider);
+  flex-shrink: 0;
+}
+.detail-summary-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-sm);
+}
+.detail-summary-text {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+}
+.detail-content {
+  flex: 1;
+  padding: var(--spacing-xl);
+  overflow-y: auto;
+  font-size: var(--font-size-base);
+  line-height: 1.7;
+  color: var(--color-text-primary);
+}
+.detail-content h3 {
+  font-size: var(--font-size-lg);
+  margin: var(--spacing-lg) 0 var(--spacing-md);
+  color: var(--color-text-primary);
+}
+.detail-content p {
+  margin-bottom: var(--spacing-md);
+}
+.detail-content .action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--color-text-link);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-base);
+  cursor: pointer;
+}
+.detail-content .action-link svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+.detail-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-base);
+  color: var(--color-text-tertiary);
+}
+.detail-placeholder svg { width: 64px; height: 64px; stroke: var(--color-border); fill: none; stroke-width: 1; }
+.detail-placeholder span { font-size: var(--font-size-sm); }
+
+/* --- Resize handle --- */
+.resize-handle {
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  flex-shrink: 0;
+  position: relative;
+}
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: var(--color-divider);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.resize-handle:hover::after { opacity: 1; }
+
+/* ============================================================
+ * 3. SETTINGS PAGE
+ * ============================================================ */
+.settings-view {
+  width: 100%;
+  max-width: 1200px;
+  height: 700px;
+  background: var(--color-bg-page);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xl);
+}
+.settings-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+.settings-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-xl) var(--spacing-2xl);
+}
+.settings-content h2 {
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--spacing-xl);
+}
+.settings-group {
+  background: var(--color-bg-container);
+  border-radius: var(--radius-base);
+  border: 1px solid var(--color-border-light);
+  margin-bottom: var(--spacing-xl);
+  overflow: hidden;
+}
+.settings-group-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-divider);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border-light);
+  min-height: 48px;
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-label {
+  width: 140px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+.settings-value {
+  flex: 1;
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+.settings-value .masked {
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+.settings-value .hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+.settings-value .warning-badge {
+  font-size: var(--font-size-xs);
+  color: var(--color-warning);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.settings-value button {
+  padding: 4px 12px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.settings-value button:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.settings-value button.primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+.settings-value button.primary:hover { background: var(--color-primary-hover); }
+/* Toggle switch */
+.toggle {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--color-border);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle.on { background: var(--color-primary); }
+.toggle::after {
+  content: '';
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle.on::after { transform: translateX(18px); }
+/* Radio group */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+.radio-item input[type="radio"] { accent-color: var(--color-primary); }
+/* Status indicator */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.status-indicator .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.status-indicator .dot.green { background: var(--color-success); }
+.status-indicator .dot.red { background: var(--color-error); }
+.status-indicator .dot.amber { background: var(--color-warning); }
+
+/* ============================================================
+ * 4. TOAST
+ * ============================================================ */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+}
+.toast {
+  background: var(--color-bg-container);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  min-width: 240px;
+  animation: toastIn 0.25s ease-out;
+}
+.toast svg { width: 16px; height: 16px; stroke-width: 2; fill: none; flex-shrink: 0; }
+.toast.success svg { stroke: var(--color-success); }
+.toast.warning svg { stroke: var(--color-warning); }
+.toast.error svg { stroke: var(--color-error); }
+.toast .undo-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  font-weight: 500;
+}
+.toast .countdown {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  margin-left: 4px;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+ * 5. CONTEXT MENU
+ * ============================================================ */
+.context-menu {
+  background: var(--color-bg-container);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 4px;
+  min-width: 180px;
+}
+.context-menu-item {
+  padding: 8px 12px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+.context-menu-item:hover { background: var(--color-bg-hover); }
+.context-menu-item svg { width: 14px; height: 14px; stroke: var(--color-text-secondary); fill: none; stroke-width: 2; }
+.context-menu-item.danger { color: var(--color-error); }
+.context-menu-item.danger svg { stroke: var(--color-error); }
+.context-menu-divider {
+  height: 1px;
+  background: var(--color-divider);
+  margin: 4px 0;
+}
+.context-menu-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  margin-left: auto;
+}
+
+/* ============================================================
+ * 6. ONBOARDING MODAL
+ * ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-bg-mask);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+.modal {
+  background: var(--color-bg-container);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  padding: var(--spacing-2xl);
+  width: 400px;
+  animation: modalIn 0.25s ease-out;
+}
+.modal-title {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  margin-bottom: var(--spacing-base);
+}
+.modal-body { margin-bottom: var(--spacing-xl); }
+.modal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) 0;
+}
+.modal-row .desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  padding: 8px 24px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--color-primary-hover); }
+.btn-primary:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+.btn-danger {
+  background: var(--color-error);
+  color: #fff;
+  border: none;
+  padding: 8px 24px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-danger:hover { background: #D32F2F; }
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================================
+ * 7. SKELETON LOADING
+ * ============================================================ */
+.skeleton-item {
+  height: var(--list-item-height);
+  padding: var(--spacing-md) var(--spacing-base);
+  border-bottom: 1px solid var(--color-divider);
+  display: flex;
+  gap: var(--spacing-md);
+}
+.skeleton-bar {
+  width: 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, var(--color-bg-hover) 25%, var(--color-bg-active) 50%, var(--color-bg-hover) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.skeleton-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+.skeleton-line {
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--color-bg-hover) 25%, var(--color-bg-active) 50%, var(--color-bg-hover) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.skeleton-line.short { width: 40%; }
+.skeleton-line.medium { width: 70%; }
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================================
+ * 8. EMPTY STATE
+ * ============================================================ */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-3xl);
+}
+.empty-state svg { width: 80px; height: 80px; stroke: var(--color-border); fill: none; stroke-width: 1; }
+.empty-state .title { font-size: var(--font-size-lg); color: var(--color-text-secondary); }
+.empty-state .link { font-size: var(--font-size-sm); color: var(--color-text-link); cursor: pointer; }
+.empty-state .link:hover { text-decoration: underline; }
+
+/* ============================================================
+ * 9. TRAY MENU
+ * ============================================================ */
+.tray-menu {
+  background: var(--color-bg-container);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 4px;
+  min-width: 200px;
+}
+.tray-menu-header {
+  padding: 8px 12px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-divider);
+  margin-bottom: 4px;
+}
+.tray-menu-badge {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  font-weight: 400;
+  margin-left: 4px;
+}
+.tray-menu-item {
+  padding: 8px 12px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.15s;
+}
+.tray-menu-item:hover { background: var(--color-bg-hover); }
+.tray-menu-item .check { color: var(--color-primary); }
+.tray-menu-item.danger { color: var(--color-error); }
+.tray-menu-divider {
+  height: 1px;
+  background: var(--color-divider);
+  margin: 4px 0;
+}
+
+/* ============================================================
+ * Color Palette Preview
+ * ============================================================ */
+.palette {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 1200px;
+}
+.palette-item {
+  border-radius: var(--radius-base);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-container);
+}
+.palette-swatch {
+  height: 56px;
+}
+.palette-info {
+  padding: 8px 10px;
+}
+.palette-name {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+.palette-value {
+  font-size: 12px;
+  font-family: "SF Mono", Menlo, monospace;
+  color: var(--color-text-primary);
+}
+
+/* ============================================================
+ * Component Showcase Row
+ * ============================================================ */
+.showcase-row {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+  max-width: 1200px;
+  flex-wrap: wrap;
+}
+.showcase-card {
+  flex: 1;
+  min-width: 320px;
+  background: var(--color-bg-container);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  padding: var(--spacing-xl);
+}
+.showcase-card h3 {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  margin-bottom: var(--spacing-base);
+  color: var(--color-text-primary);
+}
+</style>
+</head>
+<body>
+
+<!-- Theme Toggle -->
+<button class="theme-toggle" onclick="document.documentElement.classList.toggle('dark')">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+  切换主题
+</button>
+
+<h1 style="color:#fff; margin-bottom: 8px;">WxPusher Desktop - UI Preview</h1>
+
+<!-- ============================================================
+ * 1. COLOR PALETTE
+ * ============================================================ -->
+<div class="section">
+  <p class="label">DESIGN TOKENS / COLOR PALETTE</p>
+  <div class="palette">
+    <div class="palette-item"><div class="palette-swatch" style="background:#B300B3"></div><div class="palette-info"><div class="palette-name">Primary</div><div class="palette-value">#B300B3</div></div></div>
+    <div class="palette-item"><div class="palette-swatch" style="background:#430043"></div><div class="palette-info"><div class="palette-name">Primary Dark</div><div class="palette-value">#430043</div></div></div>
+    <div class="palette-item"><div class="palette-swatch" style="background:#F9E6F9"></div><div class="palette-info"><div class="palette-name">Primary BG</div><div class="palette-value">#F9E6F9</div></div></div>
+    <div class="palette-item"><div class="palette-swatch" style="background:#4CAF50"></div><div class="palette-info"><div class="palette-name">Success</div><div class="palette-value">#4CAF50</div></div></div>
+    <div class="palette-item"><div class="palette-swatch" style="background:#F44336"></div><div class="palette-info"><div class="palette-name">Error</div><div class="palette-value">#F44336</div></div></div>
+    <div class="palette-item"><div class="palette-swatch" style="background:#FF9800"></div><div class="palette-info"><div class="palette-name">Warning</div><div class="palette-value">#FF9800</div></div></div>
+    <div class="palette-item"><div class="palette-swatch" style="background:#2196F3"></div><div class="palette-info"><div class="palette-name">Info / Unread</div><div class="palette-value">#2196F3</div></div></div>
+    <div class="palette-item"><div class="palette-swatch" style="background:#07C160"></div><div class="palette-info"><div class="palette-name">WeChat</div><div class="palette-value">#07C160</div></div></div>
+  </div>
+</div>
+
+<!-- ============================================================
+ * 2. LOGIN PAGE
+ * ============================================================ -->
+<div class="section">
+  <p class="label">LOGIN PAGE / 登录页</p>
+  <div class="login-page">
+    <div class="login-status">
+      <span class="status-dot connecting"></span>
+      <span>连接中...</span>
+    </div>
+    <div class="login-card">
+      <div class="login-logo">Wx</div>
+      <div class="login-title">WxPusher</div>
+      <div class="login-qr-area">
+        <div class="login-qr"></div>
+        <div class="login-qr-tip">请使用 WxPusher App 或微信扫码登录</div>
+        <div class="login-countdown">
+          <span>剩余 245 秒</span>
+          <span>·</span>
+          <a>刷新二维码</a>
+        </div>
+      </div>
+      <div class="login-agreement">
+        <input type="checkbox">
+        <span>我已阅读并同意 <a href="#">《用户协议》</a> 和 <a href="#">《隐私政策》</a></span>
+      </div>
+      <div class="login-footer">
+        <a href="#">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          还没安装 WxPusher App？
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+ * 3. MAIN VIEW (with notifications)
+ * ============================================================ -->
+<div class="section">
+  <p class="label">MAIN VIEW / 主界面 - 消息列表 + 详情</p>
+  <div class="main-view">
+    <!-- Titlebar -->
+    <div class="titlebar">
+      <div class="traffic-lights"><span class="red"></span><span class="yellow"></span><span class="green"></span></div>
+      <span style="font-size:var(--font-size-sm);color:var(--color-text-tertiary);font-weight:500;">WxPusher</span>
+      <div class="toolbar-right">
+        <div class="ws-status online" title="直连 / 上次心跳：3 秒前">
+          <span class="dot online"></span>
+          <span>WS 已连接</span>
+        </div>
+        <div class="search-box">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>搜索消息内容、发送方</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Banners -->
+    <div class="banner-error">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      <span>通知权限未开启，桌面提醒将无法弹出</span>
+      <button>去开启</button>
+      <button class="ignore">忽略</button>
+    </div>
+    <div class="list-banner" style="border-bottom:1px solid var(--color-divider);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>WxPusher 桌面端已发布公测版</span>
+      <button class="close-btn">&times;</button>
+    </div>
+
+    <!-- Body -->
+    <div class="body">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-user">
+          <div class="user-avatar">张</div>
+          <div class="user-name">张三</div>
+        </div>
+        <div class="sidebar-nav">
+          <div class="nav-item active">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            消息
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            消息市场
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            设置
+          </div>
+        </div>
+        <div class="sidebar-footer">
+          <button class="collapse-btn" title="折叠侧边栏 (⌘\)">
+            <svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+        <!-- List Pane -->
+        <div class="list-pane">
+          <div class="list-pane-header">
+            <span style="font-size:var(--font-size-sm);font-weight:500;">消息列表</span>
+            <span class="refresh-time">
+              更新于 2 分钟前
+              <button class="refresh-btn" title="刷新">
+                <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              </button>
+            </span>
+          </div>
+          <!-- Selection bar -->
+          <div class="selection-bar">
+            <span>已选中 2 条</span>
+            <button>全部已读</button>
+            <button>删除</button>
+            <button class="cancel">取消</button>
+          </div>
+          <div class="list-items">
+            <!-- Active (selected + unread) -->
+            <div class="msg-item active" tabindex="0">
+              <div class="msg-unread-dot"></div>
+              <div class="msg-body">
+                <div class="msg-header">
+                  <span class="msg-sender">服务器告警</span>
+                  <span class="msg-time">2 分钟前</span>
+                </div>
+                <div class="msg-summary">CPU 使用率超过 90%，服务器 prod-01 需要立即处理</div>
+              </div>
+            </div>
+            <!-- Unread -->
+            <div class="msg-item" tabindex="0">
+              <div class="msg-unread-dot"></div>
+              <div class="msg-body">
+                <div class="msg-header">
+                  <span class="msg-sender">CI 构建通知</span>
+                  <span class="msg-time">5 分钟前</span>
+                </div>
+                <div class="msg-summary">PR #123 合并成功，已自动部署到 staging 环境</div>
+              </div>
+            </div>
+            <!-- Read -->
+            <div class="msg-item" tabindex="0">
+              <div class="msg-read-dot"></div>
+              <div class="msg-body">
+                <div class="msg-header">
+                  <span class="msg-sender">用户反馈</span>
+                  <span class="msg-time">15 分钟前</span>
+                </div>
+                <div class="msg-summary">请查看新提交的工单 #456，用户报告了登录异常</div>
+              </div>
+            </div>
+            <!-- Unread -->
+            <div class="msg-item" tabindex="0">
+              <div class="msg-unread-dot"></div>
+              <div class="msg-body">
+                <div class="msg-header">
+                  <span class="msg-sender">域名证书监控</span>
+                  <span class="msg-time">1 小时前</span>
+                </div>
+                <div class="msg-summary">example.com 的 SSL 证书将在 7 天后过期，请及时续期</div>
+              </div>
+            </div>
+            <!-- Read -->
+            <div class="msg-item" tabindex="0">
+              <div class="msg-read-dot"></div>
+              <div class="msg-body">
+                <div class="msg-header">
+                  <span class="msg-sender">订单通知</span>
+                  <span class="msg-time">2 小时前</span>
+                </div>
+                <div class="msg-summary">您有新的订单待处理，订单号 #78901</div>
+              </div>
+            </div>
+          </div>
+          <div class="load-more">
+            <button>加载更多</button>
+          </div>
+        </div>
+
+        <!-- Resize Handle -->
+        <div class="resize-handle"></div>
+
+        <!-- Detail Pane -->
+        <div class="detail-pane">
+          <div class="detail-header">
+            <div class="detail-title">服务器告警通知</div>
+            <div class="detail-info-grid">
+              <span class="detail-info-label">发送方</span>
+              <span class="detail-info-value text">服务器监控</span>
+              <span class="detail-info-label">消息 ID</span>
+              <span class="detail-info-value">189347256</span>
+              <span class="detail-info-label">时间</span>
+              <span class="detail-info-value">2026-05-10 14:30:22</span>
+            </div>
+          </div>
+          <div class="detail-summary">
+            <div class="detail-summary-label">摘要</div>
+            <div class="detail-summary-text">CPU 使用率超过 90%，服务器 prod-01 需要立即处理</div>
+          </div>
+          <div class="detail-content">
+            <h3>告警详情</h3>
+            <p>服务器 <strong>prod-01</strong> 的 CPU 使用率已达到 <span style="color:var(--color-error);font-weight:600;">92%</span>，持续时间超过 5 分钟。</p>
+            <h3>建议操作</h3>
+            <p>1. 检查是否有异常进程占用 CPU</p>
+            <p>2. 考虑扩容或优化高负载服务</p>
+            <p>3. 检查近期是否有代码变更导致性能退化</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+ * 4. MESSAGE ITEM STATES
+ * ============================================================ -->
+<div class="section">
+  <p class="label">MESSAGE ITEM STATES / 消息列表项状态</p>
+  <div class="showcase-row">
+    <div class="showcase-card">
+      <h3>已读 / 未读状态对比</h3>
+      <div style="display:flex;flex-direction:column;border:1px solid var(--color-border);border-radius:var(--radius-base);overflow:hidden;">
+        <!-- Unread -->
+        <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--color-divider);background:var(--color-bg-container);">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--color-primary);margin-right:12px;flex-shrink:0;box-shadow:0 0 6px rgba(179,0,179,0.4);"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:14px;font-weight:500;color:var(--color-text-primary);">服务器告警</span>
+              <span style="font-size:12px;color:var(--color-text-tertiary);">2 分钟前</span>
+            </div>
+            <div style="font-size:13px;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">CPU 使用率超过 90%，服务器 prod-01 需要立即处理</div>
+          </div>
+        </div>
+        <!-- Read -->
+        <div style="display:flex;align-items:center;padding:12px 16px;background:var(--color-bg-container);">
+          <div style="width:8px;height:8px;border-radius:50%;background:transparent;margin-right:12px;flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:14px;font-weight:500;color:var(--color-text-primary);">用户反馈</span>
+              <span style="font-size:12px;color:var(--color-text-tertiary);">15 分钟前</span>
+            </div>
+            <div style="font-size:13px;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">请查看新提交的工单 #456，用户报告了登录异常</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--color-text-tertiary);line-height:1.6;">
+        <strong>未读</strong>：左侧 8px 主色圆点 + 微阴影（<code style="background:var(--color-bg-hover);padding:1px 4px;border-radius:3px;">--color-primary</code>）<br>
+        <strong>已读</strong>：无圆点，文字颜色不变
+      </div>
+    </div>
+    <div class="showcase-card">
+      <h3>多选状态</h3>
+      <div style="display:flex;flex-direction:column;border:1px solid var(--color-border);border-radius:var(--radius-base);overflow:hidden;">
+        <!-- Multi-select header -->
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 16px;background:var(--color-primary-bg);border-bottom:1px solid var(--color-divider);font-size:13px;color:var(--color-primary);">
+          <span>已选中 3 条</span>
+          <button style="padding:3px 10px;border-radius:var(--radius-xs);border:1px solid var(--color-primary);background:transparent;color:var(--color-primary);font-size:12px;cursor:pointer;">全部已读</button>
+          <button style="padding:3px 10px;border-radius:var(--radius-xs);border:1px solid var(--color-primary);background:transparent;color:var(--color-primary);font-size:12px;cursor:pointer;">删除</button>
+          <button style="padding:3px 10px;border-radius:var(--radius-xs);border:1px solid var(--color-border);background:transparent;color:var(--color-text-secondary);font-size:12px;cursor:pointer;margin-left:auto;">取消</button>
+        </div>
+        <!-- Selected + Unread -->
+        <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--color-divider);background:var(--color-primary-bg);">
+          <div class="msg-checkbox checked"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--color-primary);margin:0 12px;flex-shrink:0;box-shadow:0 0 6px rgba(179,0,179,0.4);"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:14px;font-weight:500;color:var(--color-text-primary);">服务器告警</span>
+              <span style="font-size:12px;color:var(--color-text-tertiary);">2 分钟前</span>
+            </div>
+            <div style="font-size:13px;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">CPU 使用率超过 90%</div>
+          </div>
+        </div>
+        <!-- Selected + Unread -->
+        <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--color-divider);background:var(--color-primary-bg);">
+          <div class="msg-checkbox checked"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--color-primary);margin:0 12px;flex-shrink:0;box-shadow:0 0 6px rgba(179,0,179,0.4);"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:14px;font-weight:500;color:var(--color-text-primary);">CI 构建通知</span>
+              <span style="font-size:12px;color:var(--color-text-tertiary);">5 分钟前</span>
+            </div>
+            <div style="font-size:13px;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">PR #123 合并成功</div>
+          </div>
+        </div>
+        <!-- Selected + Read -->
+        <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--color-divider);background:var(--color-primary-bg);">
+          <div class="msg-checkbox checked"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:transparent;margin:0 12px;flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:14px;font-weight:500;color:var(--color-text-primary);">用户反馈</span>
+              <span style="font-size:12px;color:var(--color-text-tertiary);">15 分钟前</span>
+            </div>
+            <div style="font-size:13px;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">请查看新提交的工单 #456</div>
+          </div>
+        </div>
+        <!-- Not selected -->
+        <div style="display:flex;align-items:center;padding:12px 16px;background:var(--color-bg-container);">
+          <div class="msg-checkbox"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--color-primary);margin:0 12px;flex-shrink:0;box-shadow:0 0 6px rgba(179,0,179,0.4);"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:14px;font-weight:500;color:var(--color-text-primary);">域名证书监控</span>
+              <span style="font-size:12px;color:var(--color-text-tertiary);">1 小时前</span>
+            </div>
+            <div style="font-size:13px;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">example.com 的 SSL 证书将在 7 天后过期</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--color-text-tertiary);line-height:1.6;">
+        多选操作：<code style="background:var(--color-bg-hover);padding:1px 4px;border-radius:3px;">⌘/Ctrl+Click</code> 切换选择，
+        <code style="background:var(--color-bg-hover);padding:1px 4px;border-radius:3px;">Shift+Click</code> 范围选择，
+        <code style="background:var(--color-bg-hover);padding:1px 4px;border-radius:3px;">⌘A</code> 全选当前可见
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+ * 5. EMPTY STATE
+ * ============================================================ -->
+<div class="section">
+  <p class="label">EMPTY STATE / 空状态 + 骨架屏</p>
+  <div class="showcase-row">
+    <div class="showcase-card">
+      <h3>空状态</h3>
+      <div style="height:300px;display:flex;flex-direction:column;">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <div class="title">暂无消息</div>
+          <div class="link">为什么我收不到消息？</div>
+        </div>
+      </div>
+    </div>
+    <div class="showcase-card">
+      <h3>加载骨架屏</h3>
+      <div style="display:flex;flex-direction:column;">
+        <div class="skeleton-item"><div class="skeleton-bar"></div><div class="skeleton-body"><div class="skeleton-line short"></div><div class="skeleton-line medium"></div></div></div>
+        <div class="skeleton-item"><div class="skeleton-bar"></div><div class="skeleton-body"><div class="skeleton-line short"></div><div class="skeleton-line medium"></div></div></div>
+        <div class="skeleton-item"><div class="skeleton-bar"></div><div class="skeleton-body"><div class="skeleton-line short"></div><div class="skeleton-line medium"></div></div></div>
+        <div class="skeleton-item"><div class="skeleton-bar"></div><div class="skeleton-body"><div class="skeleton-line short"></div><div class="skeleton-line medium"></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+ * 5. CONTEXT MENU + TOAST
+ * ============================================================ -->
+<div class="section">
+  <p class="label">CONTEXT MENU + TOAST / 右键菜单 + Toast</p>
+  <div class="showcase-row">
+    <div class="showcase-card">
+      <h3>右键菜单</h3>
+      <div class="context-menu" style="display:inline-block;">
+        <div class="context-menu-item">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          标为已读
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item danger">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          删除
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item">
+          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          复制摘要
+        </div>
+        <div class="context-menu-item">
+          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          复制原始 URL
+        </div>
+        <div class="context-menu-item">
+          <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          在浏览器中打开
+        </div>
+      </div>
+    </div>
+    <div class="showcase-card">
+      <h3>Toast 通知</h3>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="toast success">
+          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span>已刷新，新增 3 条</span>
+        </div>
+        <div class="toast warning">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span>已删除 5 条消息</span>
+          <button class="undo-btn">撤销</button>
+          <span class="countdown">5s</span>
+        </div>
+        <div class="toast error">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>请检查网络连接</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+ * 6. TRAY MENU
+ * ============================================================ -->
+<div class="section">
+  <p class="label">TRAY MENU + CONFIRM / 托盘菜单 + 确认弹窗</p>
+  <div class="showcase-row">
+    <div class="showcase-card">
+      <h3>系统托盘菜单</h3>
+      <div class="tray-menu" style="display:inline-block;">
+        <div class="tray-menu-header">WxPusher<span class="tray-menu-badge">未读 12 条</span></div>
+        <div class="tray-menu-item">显示主窗口</div>
+        <div class="tray-menu-divider"></div>
+        <div class="tray-menu-item">静音模式 <span class="check">&#10003;</span></div>
+        <div class="tray-menu-item">暂停接收</div>
+        <div class="tray-menu-divider"></div>
+        <div class="tray-menu-item danger">退出 WxPusher</div>
+      </div>
+    </div>
+    <div class="showcase-card">
+      <h3>确认删除弹窗</h3>
+      <div class="modal" style="width:100%;box-shadow:var(--shadow-md);">
+        <div class="modal-title">确认删除</div>
+        <div class="modal-body">
+          <p style="color:var(--color-text-secondary);font-size:var(--font-size-sm);line-height:1.6;">此操作不可撤销，将删除所有 <strong>156</strong> 条消息。确定要继续吗？</p>
+        </div>
+        <div class="modal-footer" style="gap:12px;">
+          <button style="padding:8px 24px;border-radius:var(--radius-md);border:1px solid var(--color-border);background:transparent;color:var(--color-text-secondary);font-size:var(--font-size-base);cursor:pointer;">取消</button>
+          <button class="btn-danger">确认删除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+ * 7. ONBOARDING
+ * ============================================================ -->
+<div class="section">
+  <p class="label">ONBOARDING / 新手引导</p>
+  <div class="showcase-row" style="justify-content:center;">
+    <div class="modal" style="width:420px;box-shadow:var(--shadow-md);">
+      <div class="modal-title">欢迎使用 WxPusher Desktop</div>
+      <div class="modal-body">
+        <div class="modal-row">
+          <div>
+            <div style="font-size:var(--font-size-base);">开机自启</div>
+            <div class="desc">推荐开启，确保不错过重要消息</div>
+          </div>
+          <div class="toggle on"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary">开始使用</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+ * 8. SETTINGS PAGE
+ * ============================================================ -->
+<div class="section">
+  <p class="label">SETTINGS PAGE / 设置页</p>
+  <div class="settings-view">
+    <div class="titlebar">
+      <div class="traffic-lights"><span class="red"></span><span class="yellow"></span><span class="green"></span></div>
+      <span style="font-size:var(--font-size-sm);color:var(--color-text-tertiary);font-weight:500;">WxPusher</span>
+    </div>
+    <div class="settings-body">
+      <div class="sidebar">
+        <div class="sidebar-user">
+          <div class="user-avatar">张</div>
+          <div class="user-name">张三</div>
+        </div>
+        <div class="sidebar-nav">
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            消息
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            消息市场
+          </div>
+          <div class="nav-item active">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            设置
+          </div>
+        </div>
+      </div>
+      <div class="settings-content">
+        <h2>设置</h2>
+
+        <div class="settings-group">
+          <div class="settings-group-title">设备和账号</div>
+          <div class="settings-row">
+            <div class="settings-label">UID</div>
+            <div class="settings-value">
+              <span>U_abc123def456</span>
+              <button>复制</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">SPT</div>
+            <div class="settings-value">
+              <span class="masked">SPT_********xxxx</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-tertiary)" stroke-width="2" style="cursor:pointer;flex-shrink:0;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span class="warning-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                等同密码
+              </span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">设备 ID</div>
+            <div class="settings-value">
+              <span>D_xxxxxxxxxxxx</span>
+              <button>复制</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">账号详情</div>
+            <div class="settings-value">
+              <button class="primary">查看</button>
+              <span class="hint">换绑手机、绑定/解绑微信、退出登录</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">推送渠道</div>
+            <div class="settings-value">
+              <button class="primary">管理</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">通知提醒</div>
+          <div class="settings-row">
+            <div class="settings-label">系统通知权限</div>
+            <div class="settings-value">
+              <div class="status-indicator">
+                <span class="dot green"></span>
+                <span>已授权</span>
+              </div>
+              <button>重新检查</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">推送检查</div>
+            <div class="settings-value">
+              <button>检查</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">通知行为</div>
+            <div class="settings-value">
+              <div class="radio-group">
+                <label class="radio-item"><input type="radio" name="notify" checked> 全部消息</label>
+                <label class="radio-item"><input type="radio" name="notify"> 仅显示标题</label>
+                <label class="radio-item"><input type="radio" name="notify"> 仅徽标不弹横幅</label>
+                <label class="radio-item"><input type="radio" name="notify"> 静音</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">桌面专属</div>
+          <div class="settings-row">
+            <div class="settings-label">开机自启</div>
+            <div class="settings-value">
+              <div class="toggle"></div>
+              <span class="hint">默认关闭</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">关闭主窗口行为</div>
+            <div class="settings-value">
+              <div class="radio-group">
+                <label class="radio-item"><input type="radio" name="close" checked> 最小化到托盘</label>
+                <label class="radio-item"><input type="radio" name="close"> 退出应用</label>
+              </div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">启动后显示窗口</div>
+            <div class="settings-value">
+              <div class="toggle on"></div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">网络代理</div>
+            <div class="settings-value">
+              <span>当前：直连</span>
+              <span class="hint">遵循系统代理，首版不提供自定义代理</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">数据目录</div>
+            <div class="settings-value">
+              <span style="font-size:var(--font-size-sm);font-family:monospace;">~/Library/Application Support/wxpusher-desktop</span>
+              <button>在 Finder 打开</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">快捷键</div>
+            <div class="settings-value">
+              <button>自定义快捷键</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">通用</div>
+          <div class="settings-row">
+            <div class="settings-label">反馈建议</div>
+            <div class="settings-value"><button>提交反馈</button></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">检查更新</div>
+            <div class="settings-value"><button>检查更新</button></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">用户协议</div>
+            <div class="settings-value"><button>查看</button></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">关于</div>
+            <div class="settings-value">
+              <div>
+                <div>WxPusher Desktop v1.0.0</div>
+                <div class="hint">构建时间：2026-05-10 12:00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+ * 9. DETAIL PLACEHOLDER
+ * ============================================================ -->
+<div class="section">
+  <p class="label">DETAIL PLACEHOLDER / 详情占位态</p>
+  <div class="showcase-row" style="justify-content:center;">
+    <div class="showcase-card" style="min-width:480px;height:360px;display:flex;align-items:center;justify-content:center;">
+      <div class="detail-placeholder">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <span>选择一条消息查看详情</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="height:40px;"></div>
+
+</body>
+</html>

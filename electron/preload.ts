@@ -1,0 +1,123 @@
+import { contextBridge, ipcRenderer } from 'electron';
+import { IPC_CHANNELS } from './ipc/ipcChannels';
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  // 认证
+  login: (code: string) => ipcRenderer.invoke(IPC_CHANNELS.AUTH_LOGIN, code),
+  logout: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH_LOGOUT),
+  getCredential: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH_GET_CREDENTIAL),
+
+  // WS
+  wsConnect: (pushToken?: string) => ipcRenderer.invoke(IPC_CHANNELS.WS_CONNECT, pushToken),
+  wsDisconnect: () => ipcRenderer.invoke(IPC_CHANNELS.WS_DISCONNECT),
+  hasPushToken: () => ipcRenderer.invoke(IPC_CHANNELS.WS_HAS_PUSH_TOKEN),
+  isWsConnected: () => ipcRenderer.invoke(IPC_CHANNELS.WS_IS_CONNECTED),
+  // P0 修复：返回清理函数，防止监听器泄漏
+  onWsStatus: (callback: (status: string) => void) => {
+    const handler = (_: any, status: string) => callback(status);
+    ipcRenderer.on(IPC_CHANNELS.WS_STATUS, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.WS_STATUS, handler);
+  },
+  onNewMessage: (callback: (msg: any) => void) => {
+    const handler = (_: any, msg: any) => callback(msg);
+    ipcRenderer.on(IPC_CHANNELS.WS_NEW_MESSAGE, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.WS_NEW_MESSAGE, handler);
+  },
+  onPushToken: (callback: (token: string) => void) => {
+    const handler = (_: any, token: string) => callback(token);
+    ipcRenderer.on(IPC_CHANNELS.WS_PUSH_TOKEN, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.WS_PUSH_TOKEN, handler);
+  },
+  onAuthExpired: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on(IPC_CHANNELS.AUTH_EXPIRED, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.AUTH_EXPIRED, handler);
+  },
+
+  // 消息
+  getMessageList: (params: any) => ipcRenderer.invoke(IPC_CHANNELS.MSG_LIST, params),
+  markRead: (ids: number[], read: boolean) => ipcRenderer.invoke(IPC_CHANNELS.MSG_MARK_READ, ids, read),
+  deleteMessages: (ids: number[]) => ipcRenderer.invoke(IPC_CHANNELS.MSG_DELETE, ids),
+  deleteAllMessages: () => ipcRenderer.invoke(IPC_CHANNELS.MSG_DELETE_ALL),
+
+  // 通知
+  checkNotificationPermission: () => ipcRenderer.invoke(IPC_CHANNELS.NOTIFY_CHECK_PERMISSION),
+  setNotificationMode: (mode: string) => ipcRenderer.invoke(IPC_CHANNELS.NOTIFY_SET_MODE, mode),
+  openNotificationSettings: () => ipcRenderer.invoke(IPC_CHANNELS.NOTIFY_OPEN_SETTINGS),
+  onNotificationClick: (callback: (messageId: number) => void) => {
+    ipcRenderer.on(IPC_CHANNELS.NOTIFY_CLICK, (_, id) => callback(id));
+  },
+
+  // 主题
+  getTheme: () => ipcRenderer.invoke(IPC_CHANNELS.THEME_GET),
+  onThemeChanged: (callback: (isDark: boolean) => void) => {
+    ipcRenderer.on(IPC_CHANNELS.THEME_CHANGED, (_, isDark) => callback(isDark));
+  },
+
+  // 偏好
+  getPref: (key: string) => ipcRenderer.invoke(IPC_CHANNELS.PREF_GET, key),
+  setPref: (key: string, value: any) => ipcRenderer.invoke(IPC_CHANNELS.PREF_SET, key, value),
+  getAllPrefs: () => ipcRenderer.invoke(IPC_CHANNELS.PREF_GET_ALL),
+
+  // 自动更新
+  checkUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_CHECK),
+  onUpdateStatus: (callback: (status: any) => void) => {
+    ipcRenderer.on(IPC_CHANNELS.UPDATE_STATUS, (_, status) => callback(status));
+  },
+
+  // 开机自启
+  getAutoLaunch: () => ipcRenderer.invoke(IPC_CHANNELS.AUTO_LAUNCH_GET),
+  setAutoLaunch: (enabled: boolean) => ipcRenderer.invoke(IPC_CHANNELS.AUTO_LAUNCH_SET, enabled),
+
+  // 诊断
+  runDiagnostics: () => ipcRenderer.invoke(IPC_CHANNELS.DIAG_RUN),
+
+  // 网络状态
+  onNetworkStatusChanged: (callback: (isOnline: boolean) => void) => {
+    callback(navigator.onLine);
+    window.addEventListener('online', () => {
+      ipcRenderer.send('network:status-changed', true);
+      callback(true);
+    });
+    window.addEventListener('offline', () => {
+      ipcRenderer.send('network:status-changed', false);
+      callback(false);
+    });
+  },
+
+  // 平台信息
+  getPlatform: () => ipcRenderer.invoke('system:get-platform'),
+  isPackaged: () => ipcRenderer.invoke('system:is-packaged'),
+
+  // 系统操作
+  openExternal: (url: string) => ipcRenderer.invoke('system:open-external', url),
+  showInFolder: (path: string) => ipcRenderer.invoke('system:show-in-folder', path),
+  getDataPath: () => ipcRenderer.invoke('system:get-data-path'),
+
+  // 登录二维码
+  createLoginQrcode: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH_CREATE_QRCODE),
+
+  // 设备信息
+  getUserDeviceInfo: () => ipcRenderer.invoke(IPC_CHANNELS.DEVICE_GET_INFO),
+  getOpenId: () => ipcRenderer.invoke(IPC_CHANNELS.DEVICE_GET_OPENID),
+
+  // Banner / CheckReason
+  getListBanner: () => ipcRenderer.invoke(IPC_CHANNELS.MSG_LIST_BANNER),
+  checkNoMsg: () => ipcRenderer.invoke(IPC_CHANNELS.MSG_CHECK_NO_MSG),
+
+  // BrowserView
+  showBrowserView: (url: string) => ipcRenderer.invoke(IPC_CHANNELS.WEBVIEW_SHOW, url),
+  hideBrowserView: () => ipcRenderer.invoke(IPC_CHANNELS.WEBVIEW_HIDE),
+
+  // 窗口
+  minimizeWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_MINIMIZE),
+  maximizeWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_MAXIMIZE),
+  closeWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_CLOSE),
+
+  // 环境配置（开发者选项）
+  getEnvConfig: () => ipcRenderer.invoke(IPC_CHANNELS.ENV_GET_CONFIG),
+  saveEnvConfig: (config: { baseUrl: string; wsUrl: string; appFeUrl: string }) =>
+    ipcRenderer.invoke(IPC_CHANNELS.ENV_SAVE_CONFIG, config),
+  resetEnvConfig: () => ipcRenderer.invoke(IPC_CHANNELS.ENV_RESET),
+  restartApp: () => ipcRenderer.invoke('env:restart-app'),
+});

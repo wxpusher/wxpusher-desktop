@@ -1,0 +1,108 @@
+import { create } from 'zustand';
+import type { MessageItem, LoginInfo } from '../types';
+
+interface AppState {
+  // 认证
+  isLogged: boolean;
+  loginInfo: LoginInfo | null;
+
+  // WS 状态
+  wsStatus: 'NotConnect' | 'Connecting' | 'Connected';
+
+  // 消息列表
+  messages: MessageItem[];
+  selectedIds: number[];
+  searchKeyword: string;
+  searchResults: MessageItem[];
+  hasMore: boolean;
+  isLoading: boolean;
+  lastRefreshTime: number;
+  totalCount: number | null;
+  focusedIndex: number;
+
+  // 主题
+  isDarkMode: boolean;
+
+  // 侧边栏
+  sidebarCollapsed: boolean;
+  currentRoute: 'messages' | 'market' | 'settings';
+
+  // 偏好
+  onboardingCompleted: boolean;
+  notifyPermissionDismissedAt: number | null;
+
+  // Actions
+  setLogged: (info: LoginInfo) => void;
+  updateLoginInfo: (info: Partial<LoginInfo>) => void;
+  logout: () => void;
+  setWsStatus: (status: string) => void;
+  setMessages: (msgs: MessageItem[]) => void;
+  appendMessages: (msgs: MessageItem[]) => void;
+  prependMessages: (msgs: MessageItem[]) => void;
+  updateMessage: (id: number, changes: Partial<MessageItem>) => void;
+  removeMessages: (ids: number[]) => void;
+  setSelectedIds: (ids: number[]) => void;
+  setSearchKeyword: (keyword: string) => void;
+  setSearchResults: (results: MessageItem[]) => void;
+  setDarkMode: (dark: boolean) => void;
+  toggleSidebar: () => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+  setCurrentRoute: (route: string) => void;
+  setFocusedIndex: (index: number) => void;
+  setLoading: (loading: boolean) => void;
+  setHasMore: (hasMore: boolean) => void;
+  setLastRefreshTime: (time: number) => void;
+  setOnboardingCompleted: (completed: boolean) => void;
+  setNotifyPermissionDismissedAt: (time: number | null) => void;
+}
+
+export const useAppStore = create<AppState>((set) => ({
+  isLogged: false,
+  loginInfo: null,
+  wsStatus: 'NotConnect',
+  messages: [],
+  selectedIds: [],
+  searchKeyword: '',
+  searchResults: [],
+  hasMore: true,
+  isLoading: false,
+  lastRefreshTime: 0,
+  totalCount: null,
+  focusedIndex: -1,
+  isDarkMode: false,
+  sidebarCollapsed: false,
+  currentRoute: 'messages',
+  onboardingCompleted: false,
+  notifyPermissionDismissedAt: null,
+
+  setLogged: (info) => set({ isLogged: true, loginInfo: info }),
+  updateLoginInfo: (info) => set((s) => ({ loginInfo: s.loginInfo ? { ...s.loginInfo, ...info } : (info as LoginInfo) })),
+  logout: () => set({ isLogged: false, loginInfo: null, messages: [], selectedIds: [] }),
+  setWsStatus: (status) => set({ wsStatus: status as any }),
+  setMessages: (msgs) => set({ messages: msgs }),
+  appendMessages: (msgs) =>
+    set((s) => ({ messages: [...s.messages, ...msgs], hasMore: msgs.length >= 20 })),
+  prependMessages: (msgs) => set((s) => ({ messages: [...msgs, ...s.messages] })),
+  updateMessage: (id, changes) =>
+    set((s) => ({
+      messages: s.messages.map((m) => (m.messageId === id ? { ...m, ...changes } : m)),
+    })),
+  removeMessages: (ids) =>
+    set((s) => ({
+      messages: s.messages.filter((m) => !ids.includes(m.messageId)),
+      selectedIds: s.selectedIds.filter((id) => !ids.includes(id)),
+    })),
+  setSelectedIds: (ids) => set({ selectedIds: ids }),
+  setSearchKeyword: (keyword) => set({ searchKeyword: keyword }),
+  setSearchResults: (results) => set({ searchResults: results }),
+  setDarkMode: (dark) => set({ isDarkMode: dark }),
+  toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+  setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+  setCurrentRoute: (route) => set({ currentRoute: route as any }),
+  setFocusedIndex: (index) => set({ focusedIndex: index }),
+  setLoading: (loading) => set({ isLoading: loading }),
+  setHasMore: (hasMore) => set({ hasMore }),
+  setLastRefreshTime: (time) => set({ lastRefreshTime: time }),
+  setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
+  setNotifyPermissionDismissedAt: (time) => set({ notifyPermissionDismissedAt: time }),
+}));

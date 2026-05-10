@@ -1,0 +1,57 @@
+import { useState, useEffect } from 'react';
+import { Modal, Switch } from 'antd';
+import { useAppStore } from '../../stores/appStore';
+
+export default function OnboardingGuide() {
+  const onboardingCompleted = useAppStore((s) => s.onboardingCompleted);
+  const [show, setShow] = useState(false);
+  const [autoLaunch, setAutoLaunch] = useState(false);
+
+  useEffect(() => {
+    if (!onboardingCompleted) {
+      setShow(true);
+      window.electronAPI.getAutoLaunch().then(setAutoLaunch);
+    }
+  }, [onboardingCompleted]);
+
+  if (!show) return null;
+
+  return (
+    <Modal
+      open={show}
+      title="欢迎使用 WxPusher Desktop"
+      footer={null}
+      closable={false}
+      centered
+      width={400}
+    >
+      <div className="onboarding-content">
+        <div className="onboarding-row">
+          <div>
+            <div className="onboarding-label">开机自启</div>
+            <div className="onboarding-desc">推荐开启，确保不错过重要消息</div>
+          </div>
+          <Switch
+            checked={autoLaunch}
+            onChange={(checked) => {
+              setAutoLaunch(checked);
+              window.electronAPI.setAutoLaunch(checked);
+            }}
+          />
+        </div>
+      </div>
+      <div style={{ textAlign: 'right', marginTop: 24 }}>
+        <button
+          className="btn-primary"
+          onClick={() => {
+            setShow(false);
+            useAppStore.getState().setOnboardingCompleted(true);
+            window.electronAPI.setPref('onboardingCompleted', true);
+          }}
+        >
+          开始使用
+        </button>
+      </div>
+    </Modal>
+  );
+}

@@ -1,0 +1,44 @@
+{
+  "name": "wxpusher-desktop",
+  "version": "1.0.0",
+  "description": "WxPusher 消息推送平台桌面客户端",
+  "main": "dist-electron/main.js",
+  "author": "四川思明今创科技有限公司",
+  "license": "SEE LICENSE IN ../wxpusher-app/LICENSE",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "electron:dev": "vite --config vite.config.ts",
+    "electron:build": "vite build && electron-builder",
+    "electron:build:mac": "vite build && electron-builder --mac",
+    "electron:build:win": "vite build && electron-builder --win",
+    "electron:build:linux": "vite build && electron-builder --linux"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
+    "zustand": "^5.0.0",
+    "antd": "^5.22.0",
+    "react-virtuoso": "^4.10.0",
+    "lucide-react": "^0.460.0",
+    "electron-store": "^8.2.0",
+    "electron-log": "^5.2.0",
+    "electron-updater": "^6.3.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/ws": "^8.5.13",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^35.0.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.0",
+    "vite-plugin-electron": "^0.28.0",
+    "vite-plugin-electron-renderer": "^0.14.0",
+    "sass": "^1.80.0"
+  }
+}
