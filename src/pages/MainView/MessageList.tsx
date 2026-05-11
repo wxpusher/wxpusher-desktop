@@ -392,11 +392,12 @@ export default function MessageList({ onSelect, onLoadMore, onRefresh }: Props) 
               )}
               <div className={msg.read ? 'msg-read-dot' : 'msg-unread-dot'} />
               <div className="msg-body">
-                <div className="msg-header">
-                  <span className="msg-sender">{msg.name}</span>
+                <div className="msg-summary">{msg.summary}</div>
+                <div className="msg-footer">
+                  <span className="msg-source">{msg.name}</span>
+                  <span className="msg-id">#{msg.messageId}</span>
                   <span className="msg-time">{getRelativeDateTime(msg.createTime)}</span>
                 </div>
-                <div className="msg-summary">{msg.summary}</div>
               </div>
             </div>
           )}
