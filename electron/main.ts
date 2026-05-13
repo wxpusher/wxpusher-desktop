@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, shell, Menu } from 'electron';
 import path from 'path';
 import { WindowManager } from './managers/WindowManager';
 import { TrayManager } from './managers/TrayManager';
@@ -20,6 +20,11 @@ if (!gotTheLock) {
 }
 
 app.whenReady().then(async () => {
+  // Linux/Windows 默认会显示 File/Edit/Window 等窗口菜单栏，去掉以与界面风格一致
+  if (process.platform !== 'darwin') {
+    Menu.setApplicationMenu(Menu.buildFromTemplate([]));
+  }
+
   // 1. 初始化主题管理（必须最先）
   ThemeManager.init();
 
@@ -47,7 +52,6 @@ app.whenReady().then(async () => {
   // 先注册 ready-to-show，再 loadURL，避免事件丢失
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
-    mainWindow?.webContents.openDevTools({ mode: 'detach' });
   });
 
   if (credential?.deviceToken) {
@@ -63,11 +67,7 @@ app.whenReady().then(async () => {
 
 // 第二个实例尝试启动时，聚焦已有窗口
 app.on('second-instance', () => {
-  const win = WindowManager.getMainWindow();
-  if (win) {
-    if (win.isMinimized()) win.restore();
-    win.focus();
-  }
+  WindowManager.showMainWindow();
 });
 
 app.on('window-all-closed', () => {

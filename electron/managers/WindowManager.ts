@@ -51,6 +51,7 @@ export class WindowManager {
       x: bounds?.x,
       y: bounds?.y,
       show: true,
+      autoHideMenuBar: true,
       ...platformOpts,
       webPreferences: {
         preload: path.join(__dirname, 'preload.js'),
@@ -60,6 +61,12 @@ export class WindowManager {
         webviewTag: false,
       },
     });
+
+    if (process.platform !== 'darwin') {
+      win.removeMenu();
+      win.setMenu(null);
+      win.setMenuBarVisibility(false);
+    }
 
     // 窗口状态持久化
     const saveBounds = () => {
@@ -93,8 +100,8 @@ export class WindowManager {
       }
     });
 
-    // dev 模式自动打开 DevTools
-    if (!app.isPackaged) {
+    // 需要调试时显式设置 ELECTRON_OPEN_DEVTOOLS=1，避免开发工具窗口干扰正常界面
+    if (!app.isPackaged && process.env.ELECTRON_OPEN_DEVTOOLS === '1') {
       win.webContents.openDevTools({ mode: 'detach' });
     }
 
