@@ -1,25 +1,25 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { RefreshCw, Trash2, CheckCheck, X, Search } from 'lucide-react';
-import { Modal, Spin } from 'antd';
+import { Modal, Spin, message } from 'antd';
 import { useAppStore } from '../../stores/appStore';
 import { getRelativeDateTime } from '../../utils/time';
 import type { MessageItem } from '../../types';
 
 interface Props {
   onSelect: (msg: MessageItem | null) => void;
+  selectedMessageId: number | null;
   onLoadMore: () => void;
   onRefresh: () => void;
 }
 
-export default function MessageList({ onSelect, onLoadMore, onRefresh }: Props) {
+export default function MessageList({ onSelect, selectedMessageId, onLoadMore, onRefresh }: Props) {
   const messages = useAppStore((s) => s.messages);
   const selectedIds = useAppStore((s) => s.selectedIds);
   const isLoading = useAppStore((s) => s.isLoading);
   const lastRefreshTime = useAppStore((s) => s.lastRefreshTime);
   const hasMore = useAppStore((s) => s.hasMore);
 
-  const [activeMessageId, setActiveMessageId] = useState<number | null>(null);
   const [searchMode, setSearchMode] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchResults, setSearchResults] = useState<MessageItem[]>([]);
@@ -102,7 +102,6 @@ export default function MessageList({ onSelect, onLoadMore, onRefresh }: Props) 
         store.setSelectedIds(newIds);
       } else {
         // 普通点击
-        setActiveMessageId(msg.messageId);
         onSelect(msg);
         store.setSelectedIds([]);
       }
@@ -210,14 +209,13 @@ export default function MessageList({ onSelect, onLoadMore, onRefresh }: Props) 
       const list = searchMode ? searchResults : messages;
       if (!list.length) return;
 
-      const currentIndex = list.findIndex((m) => m.messageId === activeMessageId);
+      const currentIndex = list.findIndex((m) => m.messageId === selectedMessageId);
 
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
           {
             const next = Math.min(currentIndex + 1, list.length - 1);
-            setActiveMessageId(list[next].messageId);
             onSelect(list[next]);
           }
           break;
@@ -225,7 +223,6 @@ export default function MessageList({ onSelect, onLoadMore, onRefresh }: Props) 
           e.preventDefault();
           {
             const prev = Math.max(currentIndex - 1, 0);
-            setActiveMessageId(list[prev].messageId);
             onSelect(list[prev]);
           }
           break;
@@ -271,7 +268,7 @@ export default function MessageList({ onSelect, onLoadMore, onRefresh }: Props) 
 
     window.addEventListener('keydown', handleKeydown);
     return () => window.removeEventListener('keydown', handleKeydown);
-  }, [activeMessageId, messages, searchResults, searchMode, selectedIds, onSelect, handleDelete]);
+  }, [selectedMessageId, messages, searchResults, searchMode, selectedIds, onSelect, handleDelete]);
 
   // 搜索模式下：已执行搜索时显示结果，否则保持显示原列表
   const displayList = hasSearched ? searchResults : messages;
@@ -375,7 +372,7 @@ export default function MessageList({ onSelect, onLoadMore, onRefresh }: Props) 
           itemContent={(index, msg) => (
             <div
               key={msg.messageId}
-              className={`msg-item ${msg.messageId === activeMessageId ? 'active' : ''} ${selectedIds.includes(msg.messageId) ? 'selected' : ''}`}
+              className={`msg-item ${msg.messageId === selectedMessageId ? 'active' : ''} ${selectedIds.includes(msg.messageId) ? 'selected' : ''}`}
               onClick={(e) => handleMessageClick(msg, e)}
               onDoubleClick={() => handleDoubleClick(msg)}
               onContextMenu={(e) => handleContextMenu(e, msg)}

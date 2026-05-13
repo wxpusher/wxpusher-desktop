@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../../stores/appStore';
 import type { MessageItem } from '../../types';
 
@@ -7,6 +7,20 @@ interface Props {
 }
 
 export default function MessageDetail({ message }: Props) {
+  const [isLoading, setIsLoading] = useState(false);
+  const iframeKey = useMemo(() => {
+    if (!message) return 'empty';
+    return `${message.messageId}:${message.url || ''}`;
+  }, [message]);
+
+  useEffect(() => {
+    if (!message) {
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(Boolean(message.url));
+  }, [message?.messageId, message?.url]);
+
   // 自动标已读
   useEffect(() => {
     if (message && !message.read) {
@@ -35,12 +49,24 @@ export default function MessageDetail({ message }: Props) {
   return (
     <div className="detail-container">
       {message.url ? (
-        <iframe
-          className="detail-iframe"
-          src={message.url}
-          title={message.name}
-          sandbox="allow-scripts allow-same-origin allow-popups"
-        />
+        <div className="detail-content-area detail-content-frame">
+          {isLoading && (
+            <div className="detail-loading">
+              <div className="detail-loading-title">正在加载消息详情</div>
+              <div className="detail-loading-meta">
+                {message.name || `#${message.messageId}`}
+              </div>
+            </div>
+          )}
+          <iframe
+            key={iframeKey}
+            className={`detail-iframe ${isLoading ? 'is-loading' : ''}`}
+            src={message.url}
+            title={message.name}
+            sandbox="allow-scripts allow-same-origin allow-popups"
+            onLoad={() => setIsLoading(false)}
+          />
+        </div>
       ) : (
         <div className="detail-no-url">
           <div className="detail-title">{message.name}</div>

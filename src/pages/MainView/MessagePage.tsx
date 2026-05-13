@@ -5,10 +5,37 @@ import MessageDetail from './MessageDetail';
 import type { MessageItem } from '../../types';
 
 export default function MessagePage() {
+  const messages = useAppStore((s) => s.messages);
   const [selectedMessage, setSelectedMessage] = useState<MessageItem | null>(null);
+  const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
   const [listPaneWidth, setListPaneWidth] = useState(360);
   const isDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleSelectMessage = useCallback((message: MessageItem | null) => {
+    setSelectedMessage(message);
+    setSelectedMessageId(message?.messageId ?? null);
+  }, []);
+
+  useEffect(() => {
+    if (selectedMessageId === null) {
+      if (selectedMessage !== null) {
+        setSelectedMessage(null);
+      }
+      return;
+    }
+
+    const nextSelected = messages.find((item) => item.messageId === selectedMessageId) ?? null;
+    if (!nextSelected) {
+      setSelectedMessage(null);
+      setSelectedMessageId(null);
+      return;
+    }
+
+    if (selectedMessage !== nextSelected) {
+      setSelectedMessage(nextSelected);
+    }
+  }, [messages, selectedMessage, selectedMessageId]);
 
   // 初始加载
   useEffect(() => {
@@ -98,7 +125,8 @@ export default function MessagePage() {
     <div className="message-page" ref={containerRef}>
       <div className="list-pane" style={{ width: listPaneWidth }}>
         <MessageList
-          onSelect={setSelectedMessage}
+          onSelect={handleSelectMessage}
+          selectedMessageId={selectedMessageId}
           onLoadMore={loadMore}
           onRefresh={() => refreshMessages(1)}
         />
