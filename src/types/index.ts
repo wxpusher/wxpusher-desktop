@@ -90,7 +90,7 @@ declare global {
       getAutoLaunch: () => Promise<boolean>;
       setAutoLaunch: (enabled: boolean) => Promise<void>;
       runDiagnostics: () => Promise<unknown>;
-      onNetworkStatusChanged: (callback: (isOnline: boolean) => void) => void;
+      onNetworkStatusChanged: (callback: (isOnline: boolean) => void) => (() => void) | undefined;
       getPlatform: () => Promise<string>;
       isPackaged: () => Promise<boolean>;
       openExternal: (url: string) => Promise<void>;

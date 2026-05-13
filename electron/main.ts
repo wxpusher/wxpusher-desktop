@@ -8,6 +8,7 @@ import { NotificationManager } from './managers/NotificationManager';
 import { CredentialManager } from './managers/CredentialManager';
 import { PreferencesManager } from './managers/PreferencesManager';
 import { ApiService } from './managers/ApiService';
+import { NetworkManager } from './managers/NetworkManager';
 import { registerIpcHandlers } from './ipc/ipcHandlers';
 import { setupCsp } from './utils/csp';
 
@@ -43,7 +44,10 @@ app.whenReady().then(async () => {
   // 6. 初始化通知管理器
   NotificationManager.init();
 
-  // 7. 检查是否有已保存的凭证（自动登录场景）
+  // 7. 初始化网络管理器（统一处理网络变化与 WS 重连）
+  NetworkManager.init();
+
+  // 8. 检查是否有已保存的凭证（自动登录场景）
   const credential = await CredentialManager.getCredential();
   const isPackaged = app.isPackaged;
   const devUrl = 'http://localhost:5173';

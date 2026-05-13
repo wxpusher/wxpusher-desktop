@@ -1,5 +1,4 @@
 import WebSocket from 'ws';
-import { ipcMain } from 'electron';
 import { WindowManager } from './WindowManager';
 import { PreferencesManager } from './PreferencesManager';
 import { CredentialManager } from './CredentialManager';
@@ -13,6 +12,7 @@ enum WsStatus {
   Connecting = 'Connecting',
   Connected = 'Connected',
   Closing = 'Closing',
+  Offline = 'Offline',
 }
 
 enum WsMsgType {
@@ -56,16 +56,33 @@ class WsManagerClass {
   private readTimeoutTimer: NodeJS.Timeout | null = null;
   private pollTimer: NodeJS.Timeout | null = null;
   private disconnectSince: number | null = null;
-  private networkListenerRegistered = false;
+  private networkOnline: boolean | null = null;
   private readonly RETRY_SECONDS = [5, 10, 15, 20, 30, 45, 60, 120];
   private readonly HEARTBEAT_INTERVAL = 25_000;
   private readonly READ_TIMEOUT = 30_000; // P0: 30s 读超时，与服务端 IdleStateHandler 对齐
 
-  connect(pushToken?: string | null): void {
-    if (this.status === WsStatus.Connected || this.status === WsStatus.Connecting) {
+  connect(pushToken?: string | null, forceReconnect = false): void {
+    if (this.networkOnline === false) {
+      logger.info('WS 跳过连接: 当前网络离线');
+      this.status = WsStatus.Offline;
+      this.notifyStatusChange();
+      return;
+    }
+
+    if (!forceReconnect && (this.status === WsStatus.Connected || this.status === WsStatus.Connecting)) {
       logger.info(`WS 跳过连接: 当前状态=${this.status}`);
       return;
     }
+
+    if (forceReconnect) {
+      this.cleanup();
+      if (this.ws) {
+        this.ws.terminate();
+        this.ws = null;
+      }
+      this.status = WsStatus.NotConnect;
+    }
+
     this.pushToken = pushToken || null;
     this.status = WsStatus.Connecting;
     this.notifyStatusChange();
@@ -114,12 +131,14 @@ class WsManagerClass {
 
       this.ws.on('close', (code, reason) => {
         logger.info(`WS 断开: code=${code} reason=${reason} (连接存活 ${Date.now() - connectStart}ms)`);
+        this.ws = null;
         this.cleanup();
         this.scheduleReconnect();
       });
 
       this.ws.on('error', (err) => {
         logger.warn('WS 错误:', err.message);
+        this.ws = null;
         this.cleanup();
         this.scheduleReconnect();
       });
@@ -128,7 +147,6 @@ class WsManagerClass {
       this.scheduleReconnect();
     }
 
-    this.setupNetworkMonitoring();
   }
 
   private buildWsUrl(): string {
@@ -213,6 +231,13 @@ class WsManagerClass {
 
   private scheduleReconnect(): void {
     if (this.status === WsStatus.Closing) return;
+
+    if (this.networkOnline === false) {
+      this.status = WsStatus.Offline;
+      this.notifyStatusChange();
+      return;
+    }
+
     this.status = WsStatus.NotConnect;
     this.notifyStatusChange();
 
@@ -249,19 +274,38 @@ class WsManagerClass {
     logger.warn('pushToken 上报失败，已达最大重试次数');
   }
 
-  private setupNetworkMonitoring(): void {
-    if (this.networkListenerRegistered) return;
-    this.networkListenerRegistered = true;
-    ipcMain.on('network:status-changed', (_: any, isOnline: boolean) => {
-      if (isOnline) {
-        logger.info('网络恢复，立即尝试重连');
-        this.retryCount = 0;
-        if (this.status !== WsStatus.Connected) {
-          this.connect(this.pushToken);
-        }
-        this.stopPollingFallback();
-      }
-    });
+  handleNetworkOffline(): void {
+    this.networkOnline = false;
+    this.cleanup();
+    this.stopPollingFallback();
+
+    if (this.ws) {
+      this.ws.terminate();
+      this.ws = null;
+    }
+
+    if (this.status !== WsStatus.Offline) {
+      logger.info('网络离线，WS 进入离线状态');
+      this.status = WsStatus.Offline;
+      this.notifyStatusChange();
+    }
+  }
+
+  handleNetworkOnline(): void {
+    this.networkOnline = true;
+    this.retryCount = 0;
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+
+    // 已连接 / 正在连接时不打断，避免初始化时主动评估和 WS 启动竞争 force reconnect。
+    if (this.status === WsStatus.Connected || this.status === WsStatus.Connecting) {
+      logger.info(`网络恢复，WS 当前状态=${this.status}，跳过强制重连`);
+      return;
+    }
+    logger.info('网络恢复，WS 立即重连');
+    this.connect(this.pushToken, true);
   }
 
   private startPollingFallback(): void {

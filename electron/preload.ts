@@ -1,6 +1,37 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS } from './ipc/ipcChannels';
 
+// 顶层自动注册：无论 renderer 是否订阅，preload 加载时即把
+// online/offline 事件转发到主进程，确保网络变化能被 NetworkManager 立刻感知。
+(() => {
+  const log = (msg: string) => {
+    try {
+      ipcRenderer.send('debug:log', `[preload-network] ${msg}`);
+    } catch {}
+    try {
+      console.log(`[preload-network] ${msg}`);
+    } catch {}
+  };
+
+  log(`preload loaded, navigator.onLine=${navigator.onLine}`);
+
+  try {
+    ipcRenderer.send(IPC_CHANNELS.NETWORK_RENDERER_STATUS_CHANGED, navigator.onLine);
+    log(`initial NETWORK_RENDERER_STATUS_CHANGED sent: ${navigator.onLine}`);
+  } catch (e) {
+    log(`initial send error: ${e}`);
+  }
+
+  window.addEventListener('online', () => {
+    log('window event: online');
+    ipcRenderer.send(IPC_CHANNELS.NETWORK_RENDERER_STATUS_CHANGED, true);
+  });
+  window.addEventListener('offline', () => {
+    log('window event: offline');
+    ipcRenderer.send(IPC_CHANNELS.NETWORK_RENDERER_STATUS_CHANGED, false);
+  });
+})();
+
 contextBridge.exposeInMainWorld('electronAPI', {
   // 认证
   login: (code: string) => ipcRenderer.invoke(IPC_CHANNELS.AUTH_LOGIN, code),
@@ -72,17 +103,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 诊断
   runDiagnostics: () => ipcRenderer.invoke(IPC_CHANNELS.DIAG_RUN),
 
-  // 网络状态
+  // 网络状态：订阅主进程统一评估的网络状态（online/offline/unknown）
+  // 注意：window.online/offline 已在 preload 顶层自动转发到主进程，无需此处处理。
   onNetworkStatusChanged: (callback: (isOnline: boolean) => void) => {
+    const networkStatusHandler = (_: unknown, status: 'online' | 'offline' | 'unknown') => {
+      callback(status === 'online');
+    };
+
     callback(navigator.onLine);
-    window.addEventListener('online', () => {
-      ipcRenderer.send('network:status-changed', true);
-      callback(true);
-    });
-    window.addEventListener('offline', () => {
-      ipcRenderer.send('network:status-changed', false);
-      callback(false);
-    });
+    ipcRenderer.on(IPC_CHANNELS.NETWORK_STATUS, networkStatusHandler);
+
+    return () => {
+      ipcRenderer.removeListener(IPC_CHANNELS.NETWORK_STATUS, networkStatusHandler);
+    };
   },
 
   // 平台信息

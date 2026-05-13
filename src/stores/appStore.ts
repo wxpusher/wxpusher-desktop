@@ -7,7 +7,7 @@ interface AppState {
   loginInfo: LoginInfo | null;
 
   // WS 状态
-  wsStatus: 'NotConnect' | 'Connecting' | 'Connected';
+  wsStatus: 'Offline' | 'NotConnect' | 'Connecting' | 'Connected' | 'Closing';
 
   // 消息列表
   messages: MessageItem[];

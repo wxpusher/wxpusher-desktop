@@ -14,7 +14,9 @@ export default function Toolbar() {
       ? 'WS 已连接'
       : wsStatus === 'Connecting'
         ? '连接中...'
-        : 'WS 已断开';
+        : wsStatus === 'Offline'
+          ? '网络离线'
+          : 'WS 已断开';
 
   const statusClass =
     wsStatus === 'Connected'

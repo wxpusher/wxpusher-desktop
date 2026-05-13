@@ -17,6 +17,8 @@ export const IPC_CHANNELS = {
   WS_UPDATE_REQUIRED: 'ws:update-required',
   WS_HAS_PUSH_TOKEN: 'ws:has-push-token',
   WS_IS_CONNECTED: 'ws:is-connected',
+  NETWORK_RENDERER_STATUS_CHANGED: 'network:renderer-status-changed',
+  NETWORK_STATUS: 'network:status',
 
   // 消息
   MSG_LIST: 'msg:list',
