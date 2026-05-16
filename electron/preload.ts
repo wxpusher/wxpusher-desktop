@@ -132,6 +132,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     };
   },
 
+  // 详情 iframe 加载失败（主进程 did-fail-load 桥接，真实网络失败即时上报）
+  onFrameLoadFail: (
+    callback: (data: { url: string; errorCode: number; errorDescription: string }) => void
+  ) => {
+    const handler = (
+      _: unknown,
+      data: { url: string; errorCode: number; errorDescription: string }
+    ) => callback(data);
+    ipcRenderer.on(IPC_CHANNELS.IFRAME_LOAD_FAIL, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.IFRAME_LOAD_FAIL, handler);
+  },
+
   // 平台信息
   getPlatform: () => ipcRenderer.invoke('system:get-platform'),
   isPackaged: () => ipcRenderer.invoke('system:is-packaged'),

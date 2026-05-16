@@ -1,8 +1,32 @@
 import { session, app } from 'electron';
 import { PreferencesManager } from '../managers/PreferencesManager';
+import { WindowManager } from '../managers/WindowManager';
+import { IPC_CHANNELS } from '../ipc/ipcChannels';
 
 export function setupCsp(): void {
   const isDev = !app.isPackaged;
+
+  // 详情 iframe(subFrame) 网络层失败检测：
+  // - 真实 net 错误（DNS/连接/断网/超时）→ onErrorOccurred（ERR_ABORTED 是正常中止，忽略）
+  // - HTTP 错误状态（如 502/404/500，did-fail-load 不触发）→ onCompleted status>=400
+  // 复用 IFRAME_LOAD_FAIL 通道，渲染层据此即时进入失败界面（见 MessageDetail）。
+  const reportFrameFail = (url: string, errorCode: number, errorDescription: string) => {
+    WindowManager.sendToRenderer(IPC_CHANNELS.IFRAME_LOAD_FAIL, {
+      url,
+      errorCode,
+      errorDescription,
+    });
+  };
+  session.defaultSession.webRequest.onErrorOccurred((details) => {
+    if (details.resourceType === 'subFrame' && details.error !== 'net::ERR_ABORTED') {
+      reportFrameFail(details.url, -1, details.error);
+    }
+  });
+  session.defaultSession.webRequest.onCompleted((details) => {
+    if (details.resourceType === 'subFrame' && details.statusCode >= 400) {
+      reportFrameFail(details.url, details.statusCode, `HTTP ${details.statusCode}`);
+    }
+  });
 
   // 主窗口 CSP（dev 模式放宽以支持 Vite HMR）
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {

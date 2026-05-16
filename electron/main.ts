@@ -10,6 +10,7 @@ import { PreferencesManager } from './managers/PreferencesManager';
 import { ApiService } from './managers/ApiService';
 import { NetworkManager } from './managers/NetworkManager';
 import { registerIpcHandlers } from './ipc/ipcHandlers';
+import { IPC_CHANNELS } from './ipc/ipcChannels';
 import { setupCsp } from './utils/csp';
 
 let mainWindow: BrowserWindow | null = null;
@@ -104,7 +105,20 @@ app.on('web-contents-created', (_, contents) => {
     const levels = ['verbose', 'info', 'warning', 'error'];
     console.log(`[RENDERER ${levels[level]}] ${message} (${sourceId}:${line})`);
   });
-  contents.on('did-fail-load', (_event, errorCode, errorDesc, validatedURL) => {
-    console.error(`[LOAD FAIL] ${errorCode}: ${errorDesc} URL: ${validatedURL}`);
-  });
+  // 真实网络错误（DNS/连接/断网/超时等）：iframe 子框架失败上报渲染层即时显示失败界面。
+  // HTTP 错误状态（如 502）不走此事件，由 webRequest.onCompleted 兜住（见 utils/csp.ts）。
+  // errorCode -3 (ERR_ABORTED) 是切换消息/重试重挂 iframe 的正常中止，忽略。
+  contents.on(
+    'did-fail-load',
+    (_event, errorCode, errorDesc, validatedURL, isMainFrame) => {
+      console.error(`[LOAD FAIL] ${errorCode}: ${errorDesc} URL: ${validatedURL}`);
+      if (!isMainFrame && errorCode !== -3) {
+        WindowManager.sendToRenderer(IPC_CHANNELS.IFRAME_LOAD_FAIL, {
+          url: validatedURL,
+          errorCode,
+          errorDescription: errorDesc,
+        });
+      }
+    }
+  );
 });
