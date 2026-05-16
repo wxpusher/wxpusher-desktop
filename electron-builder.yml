@@ -1,5 +1,5 @@
 appId: com.smjcco.wxpusher.desktop
-productName: WxPusher
+productName: WxPusher消息推送平台
 copyright: Copyright © 2026 四川思明今创科技有限公司
 
 directories:
@@ -45,7 +45,7 @@ linux:
     - deb
     - rpm
   desktop:
-    Name: WxPusher
+    Name: WxPusher消息推送平台
     Comment: WxPusher 消息推送平台桌面客户端
     MimeType: x-scheme-handler/wxpusher
     StartupWMClass: wxpusher-desktop

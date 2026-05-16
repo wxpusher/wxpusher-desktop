@@ -1,8 +1,8 @@
 import { Tray, Menu, nativeImage, BrowserWindow, app } from 'electron';
-import path from 'path';
 import { WindowManager } from './WindowManager';
 import { PreferencesManager } from './PreferencesManager';
 import { logger } from '../utils/logger';
+import { getResourcePath } from '../utils/platform';
 
 class TrayManagerClass {
   private tray: Tray | null = null;
@@ -13,7 +13,7 @@ class TrayManagerClass {
   init(mainWindow: BrowserWindow): void {
     this.mainWindow = mainWindow;
 
-    const iconPath = path.join(__dirname, '../../resources/icon.png');
+    const iconPath = getResourcePath('icon.png');
     let trayIcon: Electron.NativeImage;
 
     try {

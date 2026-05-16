@@ -2,6 +2,7 @@ import { BrowserWindow, BrowserView, screen, app } from 'electron';
 import path from 'path';
 import { PreferencesManager } from './PreferencesManager';
 import { logger } from '../utils/logger';
+import { getResourcePath } from '../utils/platform';
 
 export class WindowManager {
   private static mainWindow: BrowserWindow | null = null;
@@ -52,6 +53,9 @@ export class WindowManager {
       y: bounds?.y,
       show: true,
       autoHideMenuBar: true,
+      // Win/Linux 窗口与任务栏图标（dev 下默认是 Electron 图标，需显式指定；
+      // 打包后仍由 electron-builder 的 win/linux icon 覆盖）。macOS 窗口无独立图标，忽略此项无害。
+      icon: getResourcePath('icon.png'),
       ...platformOpts,
       webPreferences: {
         preload: path.join(__dirname, 'preload.js'),

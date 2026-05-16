@@ -12,8 +12,15 @@ import { NetworkManager } from './managers/NetworkManager';
 import { registerIpcHandlers } from './ipc/ipcHandlers';
 import { IPC_CHANNELS } from './ipc/ipcChannels';
 import { setupCsp } from './utils/csp';
+import { getResourcePath } from './utils/platform';
 
 let mainWindow: BrowserWindow | null = null;
+
+// 应用显示名称（macOS 菜单栏/程序坞、dev 模式默认会显示 "Electron"，需显式覆盖）
+const APP_NAME = 'WxPusher消息推送平台';
+app.setName(APP_NAME);
+// Windows 任务栏/通知归属，避免显示为 electron.app.*
+app.setAppUserModelId('com.smjcco.wxpusher.desktop');
 
 // 单实例锁
 const gotTheLock = app.requestSingleInstanceLock();
@@ -25,6 +32,12 @@ app.whenReady().then(async () => {
   // Linux/Windows 默认会显示 File/Edit/Window 等窗口菜单栏，去掉以与界面风格一致
   if (process.platform !== 'darwin') {
     Menu.setApplicationMenu(Menu.buildFromTemplate([]));
+  }
+
+  // macOS 程序坞图标：dev（未打包）默认显示 Electron 图标，需显式设置；
+  // 打包后程序坞由 icon.icns 决定，此处设置无副作用。
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(getResourcePath('icon.png'));
   }
 
   // 1. 初始化主题管理（必须最先）

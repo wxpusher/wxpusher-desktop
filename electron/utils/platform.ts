@@ -1,6 +1,19 @@
 import os from 'os';
 import path from 'path';
 import fs from 'fs';
+import { app } from 'electron';
+
+/**
+ * 解析 resources/ 下资源文件的绝对路径，兼容 dev 与打包两种目录结构。
+ * - 打包后：electron-builder 的 extraResources 把 resources/ 复制到
+ *   Contents/Resources/resources/（process.resourcesPath = Contents/Resources）
+ * - dev 下：__dirname = <proj>/dist-electron，上一级即项目根，resources/ 在根目录
+ */
+export function getResourcePath(file: string): string {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'resources', file)
+    : path.join(__dirname, '..', 'resources', file);
+}
 
 export type DesktopPlatform = 'desktop_mac' | 'desktop_win' | 'desktop_linux';
 
