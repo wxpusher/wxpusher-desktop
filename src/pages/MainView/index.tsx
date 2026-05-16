@@ -20,7 +20,7 @@ export default function MainView() {
     const offMsg = window.electronAPI.onNewMessage((msg) => {
       const item = {
         messageId: msg.mid,
-        name: msg.title,
+        name: msg.name,
         summary: msg.summary,
         url: msg.url,
         sourceUrl: msg.sourceUrl,

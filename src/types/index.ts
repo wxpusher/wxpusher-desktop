@@ -40,6 +40,7 @@ export interface WsPushNoteMsg {
   createTime: number;
   mid: number;
   title: string;
+  name: string;
   summary: string;
   url: string;
   sourceUrl: string;

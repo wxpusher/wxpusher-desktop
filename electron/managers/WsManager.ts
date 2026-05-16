@@ -29,6 +29,7 @@ interface InitDeviceMsg extends BaseWsMsg {
 interface WsPushNoteMsg extends BaseWsMsg {
   mid: number;
   title: string;
+  name: string;
   summary: string;
   url: string;
   sourceUrl: string;
