@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { MessageItem, LoginInfo } from '../types';
+import { WS_STATUS, type WsStatusValue } from '../../electron/ipc/wsStatus';
 
 interface AppState {
   // 认证
@@ -7,7 +8,7 @@ interface AppState {
   loginInfo: LoginInfo | null;
 
   // WS 状态
-  wsStatus: 'Offline' | 'NotConnect' | 'Connecting' | 'Connected' | 'Closing';
+  wsStatus: WsStatusValue;
 
   // 消息列表
   messages: MessageItem[];
@@ -35,7 +36,7 @@ interface AppState {
   setLogged: (info: LoginInfo) => void;
   updateLoginInfo: (info: Partial<LoginInfo>) => void;
   logout: () => void;
-  setWsStatus: (status: string) => void;
+  setWsStatus: (status: WsStatusValue) => void;
   setMessages: (msgs: MessageItem[]) => void;
   appendMessages: (msgs: MessageItem[]) => void;
   prependMessages: (msgs: MessageItem[]) => void;
@@ -59,7 +60,7 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   isLogged: false,
   loginInfo: null,
-  wsStatus: 'NotConnect',
+  wsStatus: WS_STATUS.Connecting,
   messages: [],
   selectedIds: [],
   searchKeyword: '',
@@ -78,7 +79,7 @@ export const useAppStore = create<AppState>((set) => ({
   setLogged: (info) => set({ isLogged: true, loginInfo: info }),
   updateLoginInfo: (info) => set((s) => ({ loginInfo: s.loginInfo ? { ...s.loginInfo, ...info } : (info as LoginInfo) })),
   logout: () => set({ isLogged: false, loginInfo: null, messages: [], selectedIds: [] }),
-  setWsStatus: (status) => set({ wsStatus: status as any }),
+  setWsStatus: (status) => set({ wsStatus: status }),
   setMessages: (msgs) => set({ messages: msgs }),
   appendMessages: (msgs) =>
     set((s) => ({ messages: [...s.messages, ...msgs], hasMore: msgs.length >= 20 })),

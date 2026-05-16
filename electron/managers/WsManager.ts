@@ -6,14 +6,7 @@ import { NotificationManager } from './NotificationManager';
 import { ApiService } from './ApiService';
 import { getDesktopPlatform, getAppVersion } from '../utils/platform';
 import { logger } from '../utils/logger';
-
-enum WsStatus {
-  NotConnect = 'NotConnect',
-  Connecting = 'Connecting',
-  Connected = 'Connected',
-  Closing = 'Closing',
-  Offline = 'Offline',
-}
+import { WS_STATUS, type WsStatusValue } from '../ipc/wsStatus';
 
 enum WsMsgType {
   UP_HEART = 101,
@@ -48,7 +41,7 @@ function sleep(ms: number): Promise<void> {
 
 class WsManagerClass {
   private ws: WebSocket | null = null;
-  private status: WsStatus = WsStatus.NotConnect;
+  private status: WsStatusValue = WS_STATUS.NotConnect;
   private pushToken: string | null = null;
   private retryCount = 0;
   private retryTimer: NodeJS.Timeout | null = null;
@@ -64,12 +57,12 @@ class WsManagerClass {
   connect(pushToken?: string | null, forceReconnect = false): void {
     if (this.networkOnline === false) {
       logger.info('WS 跳过连接: 当前网络离线');
-      this.status = WsStatus.Offline;
+      this.status = WS_STATUS.Offline;
       this.notifyStatusChange();
       return;
     }
 
-    if (!forceReconnect && (this.status === WsStatus.Connected || this.status === WsStatus.Connecting)) {
+    if (!forceReconnect && (this.status === WS_STATUS.Connected || this.status === WS_STATUS.Connecting)) {
       logger.info(`WS 跳过连接: 当前状态=${this.status}`);
       return;
     }
@@ -80,11 +73,11 @@ class WsManagerClass {
         this.ws.terminate();
         this.ws = null;
       }
-      this.status = WsStatus.NotConnect;
+      this.status = WS_STATUS.NotConnect;
     }
 
     this.pushToken = pushToken || null;
-    this.status = WsStatus.Connecting;
+    this.status = WS_STATUS.Connecting;
     this.notifyStatusChange();
 
     const url = this.buildWsUrl();
@@ -104,7 +97,7 @@ class WsManagerClass {
 
       this.ws.on('open', () => {
         logger.info(`WS 已连接 (耗时 ${Date.now() - connectStart}ms)`);
-        this.status = WsStatus.Connected;
+        this.status = WS_STATUS.Connected;
         this.retryCount = 0;
         this.disconnectSince = null;
         this.stopPollingFallback();
@@ -230,15 +223,15 @@ class WsManagerClass {
   }
 
   private scheduleReconnect(): void {
-    if (this.status === WsStatus.Closing) return;
+    if (this.status === WS_STATUS.Closing) return;
 
     if (this.networkOnline === false) {
-      this.status = WsStatus.Offline;
+      this.status = WS_STATUS.Offline;
       this.notifyStatusChange();
       return;
     }
 
-    this.status = WsStatus.NotConnect;
+    this.status = WS_STATUS.NotConnect;
     this.notifyStatusChange();
 
     // P0 修复：仅首次断连时启动降级轮询，避免重复创建定时器
@@ -284,9 +277,9 @@ class WsManagerClass {
       this.ws = null;
     }
 
-    if (this.status !== WsStatus.Offline) {
+    if (this.status !== WS_STATUS.Offline) {
       logger.info('网络离线，WS 进入离线状态');
-      this.status = WsStatus.Offline;
+      this.status = WS_STATUS.Offline;
       this.notifyStatusChange();
     }
   }
@@ -300,7 +293,7 @@ class WsManagerClass {
     }
 
     // 已连接 / 正在连接时不打断，避免初始化时主动评估和 WS 启动竞争 force reconnect。
-    if (this.status === WsStatus.Connected || this.status === WsStatus.Connecting) {
+    if (this.status === WS_STATUS.Connected || this.status === WS_STATUS.Connecting) {
       logger.info(`网络恢复，WS 当前状态=${this.status}，跳过强制重连`);
       return;
     }
@@ -324,9 +317,9 @@ class WsManagerClass {
   private startPollingFallback(): void {
     // disconnectSince 已在 scheduleReconnect 中设置
     setTimeout(() => {
-      if (this.status !== WsStatus.Connected && this.disconnectSince) {
+      if (this.status !== WS_STATUS.Connected && this.disconnectSince) {
         this.pollTimer = setInterval(async () => {
-          if (this.status === WsStatus.Connected) {
+          if (this.status === WS_STATUS.Connected) {
             this.stopPollingFallback();
             return;
           }
@@ -354,13 +347,13 @@ class WsManagerClass {
   }
 
   disconnect(): void {
-    this.status = WsStatus.Closing;
+    this.status = WS_STATUS.Closing;
     this.cleanup();
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
-    this.status = WsStatus.NotConnect;
+    this.status = WS_STATUS.NotConnect;
     this.notifyStatusChange();
   }
 
@@ -383,12 +376,12 @@ class WsManagerClass {
     WindowManager.sendToRenderer('ws:status', this.status);
   }
 
-  getStatus(): WsStatus {
+  getStatus(): WsStatusValue {
     return this.status;
   }
 
   isConnected(): boolean {
-    return this.status === WsStatus.Connected;
+    return this.status === WS_STATUS.Connected;
   }
 
   getPushToken(): string | null {

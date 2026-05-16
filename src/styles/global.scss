@@ -152,6 +152,7 @@ button {
 }
 
 .ws-status {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -162,6 +163,39 @@ button {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-light);
   white-space: nowrap;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+
+  // 自定义 tips：原生 title 在 Electron 标题栏区域、且状态切换时会丢失，
+  // 这里用 data-tip 驱动，鼠标悬停时始终可见，状态变化也能实时更新
+  &[data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 1000;
+    padding: 6px 10px;
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.82);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  &[data-tip]:hover::before {
+    content: '';
+    position: absolute;
+    top: calc(100% + 3px);
+    right: 12px;
+    z-index: 1000;
+    border: 5px solid transparent;
+    border-bottom-color: rgba(0, 0, 0, 0.82);
+    pointer-events: none;
+  }
 
   .dot {
     width: 6px;

@@ -68,7 +68,9 @@ declare global {
       hasPushToken: () => Promise<boolean>;
       isWsConnected: () => Promise<boolean>;
       // P0 修复：返回清理函数
-      onWsStatus: (callback: (status: string) => void) => (() => void) | undefined;
+      onWsStatus: (
+        callback: (status: import('../../electron/ipc/wsStatus').WsStatusValue) => void
+      ) => (() => void) | undefined;
       onNewMessage: (callback: (msg: WsPushNoteMsg) => void) => (() => void) | undefined;
       onPushToken: (callback: (token: string) => void) => (() => void) | undefined;
       onAuthExpired: (callback: () => void) => (() => void) | undefined;
