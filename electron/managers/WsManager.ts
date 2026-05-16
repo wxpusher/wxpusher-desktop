@@ -308,6 +308,19 @@ class WsManagerClass {
     this.connect(this.pushToken, true);
   }
 
+  // 仍在线但网卡变化（换网/换 IP）：旧 socket 可能已绑在失效网卡上，
+  // 必须强制重连（不走 handleNetworkOnline 在 Connected 时的跳过逻辑）。
+  handleNetworkChanged(): void {
+    this.networkOnline = true;
+    this.retryCount = 0;
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+    logger.info('网络变化（仍在线），WS 强制重连');
+    this.connect(this.pushToken, true);
+  }
+
   private startPollingFallback(): void {
     // disconnectSince 已在 scheduleReconnect 中设置
     setTimeout(() => {

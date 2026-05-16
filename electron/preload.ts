@@ -30,6 +30,20 @@ import { IPC_CHANNELS } from './ipc/ipcChannels';
     log('window event: offline');
     ipcRenderer.send(IPC_CHANNELS.NETWORK_RENDERER_STATUS_CHANGED, false);
   });
+
+  // Network Information API：捕获「仍在线但换网/换 IP」（如 WiFi 切以太网），
+  // online/offline 在这种场景不一定触发。防御式调用，API 不存在则跳过。
+  const conn = (navigator as any).connection;
+  if (conn && typeof conn.addEventListener === 'function') {
+    conn.addEventListener('change', () => {
+      log(`connection change: type=${conn.type ?? '-'} effectiveType=${conn.effectiveType ?? '-'}`);
+      try {
+        ipcRenderer.send(IPC_CHANNELS.NETWORK_RENDERER_CONNECTION_CHANGED);
+      } catch (e) {
+        log(`connection change send error: ${e}`);
+      }
+    });
+  }
 })();
 
 contextBridge.exposeInMainWorld('electronAPI', {

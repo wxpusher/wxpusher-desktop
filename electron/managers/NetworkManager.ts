@@ -1,8 +1,9 @@
-import { ipcMain, powerMonitor } from 'electron';
+import { ipcMain } from 'electron';
 import os from 'os';
 import { IPC_CHANNELS } from '../ipc/ipcChannels';
 import { WindowManager } from './WindowManager';
 import { WsManager } from './WsManager';
+import { createNetworkChangeSource, NetworkChangeSource } from './network/NetworkChangeSource';
 import { logger } from '../utils/logger';
 
 type NetworkStatus = 'online' | 'offline' | 'unknown';
@@ -10,13 +11,10 @@ type NetworkStatus = 'online' | 'offline' | 'unknown';
 class NetworkManagerClass {
   private status: NetworkStatus = 'unknown';
   private initialized = false;
-  private probeTimer: NodeJS.Timeout | null = null;
-  private interfaceWatchTimer: NodeJS.Timeout | null = null;
   private evaluating = false;
   private pendingEvaluate = false;
-  private lastInterfaceSignature = '';
-  private readonly PROBE_INTERVAL_MS = 3_000;
-  private readonly INTERFACE_WATCH_INTERVAL_MS = 1_000;
+  private lastSignature = '';
+  private source: NetworkChangeSource | null = null;
 
   init(): void {
     if (this.initialized) return;
@@ -29,46 +27,17 @@ class NetworkManagerClass {
       logger.info(`[debug] ${msg}`);
     });
 
-    // 收到 renderer 网络事件后立即决策：
-    // - offline：Chromium 认为离线时直接判离线（UI 尽快反映）。
-    // - online：仅作为触发重新评估的信号；是否在线由本机过滤后的活跃网卡签名决定（不请求 baseUrl）。
-    // 部分 Linux 桌面 Chromium 可能不触发 online/offline，因此仍有网卡轮询与定时兜底。
-    ipcMain.on(IPC_CHANNELS.NETWORK_RENDERER_STATUS_CHANGED, (_event, isOnline: boolean) => {
-      logger.info(`[NetworkManager] Renderer 网络事件: ${isOnline ? 'online' : 'offline'}`);
-      if (!isOnline) {
-        this.applyStatus('offline', 'renderer-event');
-        return;
-      }
-      this.checkNow('renderer-event');
+    // 感知「网络可能变化」的平台差异收敛在 NetworkChangeSource：
+    // - 三平台都订阅 Chromium 事件（online/offline/connection-change）+ powerMonitor resume；
+    // - 都保留轮询兜底，仅频率按平台区分（Linux 较高频，Mac/Win 稀疏）。
+    // 是否在线仍由本机过滤后的活跃网卡签名判定（不请求 baseUrl）。
+    this.source = createNetworkChangeSource();
+    this.source.start({
+      onReevaluate: (reason) => this.checkNow(reason),
+      onForceOffline: (reason) => this.applyStatus('offline', '', reason),
     });
 
-    powerMonitor.on('resume', () => {
-      logger.info('[NetworkManager] 系统从休眠恢复，触发网络状态重新检测');
-      this.checkNow('resume');
-    });
-
-    // OS 级网卡变化监听：每秒计算一次活跃网卡 IP 签名，发生变化即触发评估。
-    this.lastInterfaceSignature = this.computeInterfaceSignature();
-    logger.info(`[NetworkManager] 初始网卡签名=[${this.lastInterfaceSignature}]`);
     this.dumpAllInterfacesRaw('init');
-    this.interfaceWatchTimer = setInterval(() => {
-      const sig = this.computeInterfaceSignature();
-      if (sig !== this.lastInterfaceSignature) {
-        const prev = this.lastInterfaceSignature;
-        this.lastInterfaceSignature = sig;
-        logger.info(`[NetworkManager] 网卡变化: prev=[${prev}] next=[${sig}]`);
-        this.dumpAllInterfacesRaw('change');
-        this.checkNow('interface-change');
-      }
-    }, this.INTERFACE_WATCH_INTERVAL_MS);
-
-    this.probeTimer = setInterval(() => {
-      try {
-        this.evaluateAndApply('timer');
-      } catch (err) {
-        logger.warn('[NetworkManager] 网络状态评估失败(timer):', err);
-      }
-    }, this.PROBE_INTERVAL_MS);
 
     try {
       this.evaluateAndApply('init');
@@ -76,9 +45,7 @@ class NetworkManagerClass {
       logger.warn('[NetworkManager] 网络状态评估失败(init):', err);
     }
 
-    logger.info(
-      `[NetworkManager] init() done. pollInterval=${this.PROBE_INTERVAL_MS}ms, ifaceWatch=${this.INTERFACE_WATCH_INTERVAL_MS}ms`
-    );
+    logger.info('[NetworkManager] init() done.');
   }
 
   // 计算过滤后的「活跃」网卡签名，跨平台兼容 Linux/macOS/Windows。
@@ -183,9 +150,16 @@ class NetworkManagerClass {
     logger.info(`[NetworkManager] evaluate start(${source})`);
     try {
       const t0 = Date.now();
-      const online = this.detectOnline();
+      // 仅依据过滤后的活跃网卡签名；不探测 HTTP/WS。空签名=离线。
+      const sig = this.computeInterfaceSignature();
+      const online = sig !== '';
+      if (online) {
+        logger.info(`[NetworkManager] detectOnline: 有活跃网卡，判在线（不探测 baseUrl） signature=[${sig}]`);
+      } else {
+        logger.info('[NetworkManager] detectOnline: 无活跃网卡，判离线');
+      }
       logger.info(`[NetworkManager] evaluate done(${source}): online=${online}, 耗时=${Date.now() - t0}ms`);
-      this.applyStatus(online ? 'online' : 'offline', source);
+      this.applyStatus(online ? 'online' : 'offline', sig, source);
     } finally {
       this.evaluating = false;
       if (this.pendingEvaluate) {
@@ -199,8 +173,22 @@ class NetworkManagerClass {
     }
   }
 
-  private applyStatus(nextStatus: NetworkStatus, source: string): void {
-    if (nextStatus === this.status) {
+  private applyStatus(nextStatus: NetworkStatus, sig: string, source: string): void {
+    const statusChanged = nextStatus !== this.status;
+    const sigChanged = sig !== this.lastSignature;
+    const prevSig = this.lastSignature;
+    this.lastSignature = sig;
+
+    if (!statusChanged) {
+      // 仍在线但活跃网卡签名变化（换网/换 IP，如 WiFi 切以太网）：
+      // status 未跃迁会被去重，但旧 socket 已绑在失效网卡上，需立即强制重连。
+      if (nextStatus === 'online' && sigChanged && sig !== '') {
+        logger.info(
+          `[NetworkManager] 网卡签名变化(${source})，仍在线，强制 WS 重连: [${prevSig}] -> [${sig}]`
+        );
+        WsManager.handleNetworkChanged();
+        return;
+      }
       logger.info(`[NetworkManager] 状态未变更(${source}): ${nextStatus}`);
       return;
     }
@@ -215,17 +203,6 @@ class NetworkManagerClass {
       return;
     }
     WsManager.handleNetworkOffline();
-  }
-
-  /** 仅依据过滤后的活跃网卡签名；不探测 HTTP/WS。 */
-  private detectOnline(): boolean {
-    const sig = this.computeInterfaceSignature();
-    if (!sig) {
-      logger.info('[NetworkManager] detectOnline: 无活跃网卡，判离线');
-      return false;
-    }
-    logger.info(`[NetworkManager] detectOnline: 有活跃网卡，判在线（不探测 baseUrl） signature=[${sig}]`);
-    return true;
   }
 }
 
