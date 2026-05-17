@@ -35,9 +35,10 @@ app.whenReady().then(async () => {
   }
 
   // macOS 程序坞图标：dev（未打包）默认显示 Electron 图标，需显式设置；
-  // 打包后程序坞由 icon.icns 决定，此处设置无副作用。
+  // 用形状化的 icon-mac.png（圆角 squircle + 留白 + 阴影，符合 macOS 规范），
+  // 而非满画幅方形 icon.png（后者供 Win/Linux）。打包后程序坞由 icon.icns 决定。
   if (process.platform === 'darwin' && app.dock) {
-    app.dock.setIcon(getResourcePath('icon.png'));
+    app.dock.setIcon(getResourcePath('icon-mac.png'));
   }
 
   // 1. 初始化主题管理（必须最先）
