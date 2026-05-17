@@ -94,6 +94,19 @@ export default function SettingsPage() {
     message.success('已复制');
   };
 
+  const handleLogout = useCallback(() => {
+    Modal.confirm({
+      title: '退出登录',
+      content: '退出后将清除本地登录凭证，需要重新扫码登录。确定退出？',
+      okText: '确定退出',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        await window.electronAPI.logout();
+      },
+    });
+  }, []);
+
 
   // ============ 环境配置（开发者选项） ============
   // 与 Android TestPanelActivity 对齐
@@ -200,36 +213,12 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="settings-row">
-          <div className="settings-label">账号详情</div>
+          <div className="settings-label">退出登录</div>
           <div className="settings-value">
-            <button
-              className="primary"
-              onClick={() => {
-                window.electronAPI.getPref('appFeUrl').then((url) => {
-                  const appFeUrl = url || 'https://wxpusher.zjiecode.com';
-                  window.electronAPI.showBrowserView(`${appFeUrl}/app#/account-detail`);
-                });
-              }}
-            >
-              查看
+            <button className="primary" onClick={handleLogout}>
+              退出登录
             </button>
-            <span className="hint">换绑手机、绑定/解绑微信、退出登录</span>
-          </div>
-        </div>
-        <div className="settings-row">
-          <div className="settings-label">推送渠道</div>
-          <div className="settings-value">
-            <button
-              className="primary"
-              onClick={() => {
-                window.electronAPI.getPref('appFeUrl').then((url) => {
-                  const appFeUrl = url || 'https://wxpusher.zjiecode.com';
-                  window.electronAPI.showBrowserView(`${appFeUrl}/app#/push-channel`);
-                });
-              }}
-            >
-              管理
-            </button>
+            <span className="hint">退出后需重新扫码登录</span>
           </div>
         </div>
       </div>
