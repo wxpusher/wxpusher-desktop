@@ -73,12 +73,16 @@ app.whenReady().then(async () => {
     mainWindow?.show();
   });
 
+  // pushToken 每 1h 兜底上报（幂等；未登录时定时器空转且自跳过，登录后自然生效）
+  WsManager.startPushTokenReportSchedule();
+
   if (credential?.deviceToken) {
     WsManager.connect(credential.pushToken);
     mainWindow.loadURL(isPackaged ? prodUrl : devUrl);
   } else {
-    // 无凭证时也连接 WS，等待服务器下发 pushToken（用于登录流程）
-    WsManager.connect();
+    // 无凭证时也连接 WS，复用上次未登录会话已落盘的 pushToken（若有），
+    // 等待服务器下发 pushToken（用于登录流程）
+    WsManager.connect(credential?.pushToken);
     const url = isPackaged ? `${prodUrl}#/login` : `${devUrl}#/login`;
     mainWindow.loadURL(url);
   }

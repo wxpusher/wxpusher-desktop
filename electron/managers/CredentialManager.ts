@@ -6,8 +6,8 @@ import { execSync } from 'child_process';
 import { logger } from '../utils/logger';
 
 export interface CredentialData {
-  deviceToken: string;
-  deviceUuid: string;
+  deviceToken?: string;
+  deviceUuid?: string;
   pushToken?: string;
 }
 
@@ -118,8 +118,23 @@ export class CredentialManager {
     }
   }
 
+  // 持久化 pushToken（不依赖登录）：合并写入，不覆盖已有 deviceToken/deviceUuid
+  static async savePushToken(pushToken: string): Promise<void> {
+    const existing = await this.getCredential();
+    if (existing?.pushToken === pushToken) return; // 去重，避免重复加密写盘
+    await this.saveCredential({ ...(existing ?? {}), pushToken });
+  }
+
   static async clearCredential(): Promise<void> {
     try {
+      // deviceUuid 是设备身份，永久不变：登出/失效时仅清除 deviceToken/pushToken，
+      // 保留 deviceUuid，下次登录据此让服务端复用同一设备
+      const existing = await this.getCredential();
+      if (existing?.deviceUuid) {
+        await this.saveCredential({ deviceUuid: existing.deviceUuid });
+        logger.info('凭证已清除（保留 deviceUuid）');
+        return;
+      }
       const filePath = this.getCredentialPath();
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       logger.info('凭证已清除');

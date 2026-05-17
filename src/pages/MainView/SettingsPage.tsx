@@ -94,6 +94,46 @@ export default function SettingsPage() {
     message.success('已复制');
   };
 
+  const handleRecheckNotification = useCallback(async () => {
+    const result = await window.electronAPI.checkNotificationPermission();
+    setNotifPermission(result);
+    if (!result.supported) {
+      message.warning('当前系统不支持系统通知');
+    } else if (result.granted) {
+      message.success('系统通知权限已授权，无需重复开启');
+    } else {
+      message.warning('仍未获得系统通知权限，请点击「去开启」前往系统设置');
+    }
+  }, []);
+
+  const [pushChecking, setPushChecking] = useState(false);
+  const handleRecheckPush = useCallback(async () => {
+    setPushChecking(true);
+    try {
+      const result = await window.electronAPI.checkNoMsg();
+      if (!result) {
+        message.error('推送检查失败，请稍后重试');
+        return;
+      }
+      // code === 0 表示状态正常，无异常时只用 toast 提示
+      if (result.code === 0) {
+        message.success(result.reason || '推送状态正常');
+        return;
+      }
+      // 存在异常时弹窗说明，高亮按钮使用主题色
+      Modal.warning({
+        title: '推送检查',
+        content: result.reason || '推送状态异常',
+        okText: '我知道了',
+        okButtonProps: {
+          style: { background: 'var(--color-primary)', borderColor: 'var(--color-primary)' },
+        },
+      });
+    } finally {
+      setPushChecking(false);
+    }
+  }, []);
+
   const handleLogout = useCallback(() => {
     Modal.confirm({
       title: '退出登录',
@@ -236,7 +276,7 @@ export default function SettingsPage() {
             {!notifPermission.granted && (
               <button onClick={() => window.electronAPI.openNotificationSettings()}>去开启</button>
             )}
-            <button onClick={() => window.electronAPI.checkNotificationPermission().then(setNotifPermission)}>
+            <button onClick={handleRecheckNotification}>
               重新检查
             </button>
           </div>
@@ -244,14 +284,8 @@ export default function SettingsPage() {
         <div className="settings-row">
           <div className="settings-label">推送检查</div>
           <div className="settings-value">
-            <button
-              onClick={() =>
-                window.electronAPI.openExternal(
-                  'https://wxpusher.zjiecode.com/docs/open-app-note/index.html?brand=desktop'
-                )
-              }
-            >
-              检查
+            <button onClick={handleRecheckPush} disabled={pushChecking}>
+              {pushChecking ? '检查中...' : '重新检查'}
             </button>
           </div>
         </div>

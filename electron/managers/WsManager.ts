@@ -49,11 +49,13 @@ class WsManagerClass {
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private readTimeoutTimer: NodeJS.Timeout | null = null;
   private pollTimer: NodeJS.Timeout | null = null;
+  private pushTokenReportTimer: NodeJS.Timeout | null = null;
   private disconnectSince: number | null = null;
   private networkOnline: boolean | null = null;
   private readonly RETRY_SECONDS = [5, 10, 15, 20, 30, 45, 60, 120];
   private readonly HEARTBEAT_INTERVAL = 25_000;
   private readonly READ_TIMEOUT = 30_000; // P0: 30s 读超时，与服务端 IdleStateHandler 对齐
+  private readonly PUSH_TOKEN_REPORT_INTERVAL = 60 * 60 * 1000; // 1h 定时上报兜底
 
   connect(pushToken?: string | null, forceReconnect = false): void {
     if (this.networkOnline === false) {
@@ -77,7 +79,7 @@ class WsManagerClass {
       this.status = WS_STATUS.NotConnect;
     }
 
-    this.pushToken = pushToken || null;
+    this.pushToken = pushToken || this.pushToken;
     this.status = WS_STATUS.Connecting;
     this.notifyStatusChange();
 
@@ -163,6 +165,10 @@ class WsManagerClass {
         case WsMsgType.DEVICE_INIT: {
           const initMsg = msg as InitDeviceMsg;
           this.pushToken = initMsg.pushToken;
+          // 服务端下发后立即落盘（不依赖登录），后续连接复用，避免重复下发
+          CredentialManager.savePushToken(initMsg.pushToken).catch((e) =>
+            logger.warn('pushToken 落盘失败:', e)
+          );
           WindowManager.sendToRenderer('ws:push-token', initMsg.pushToken);
           this.reportPushToken(initMsg.pushToken);
           break;
@@ -257,15 +263,35 @@ class WsManagerClass {
     const delays = [5_000, 15_000, 45_000];
     for (let i = 0; i < 3; i++) {
       try {
-        await ApiService.updateDeviceInfo({ pushToken });
+        await ApiService.updateDeviceInfo({
+          pushToken,
+          // 服务端 update-device-info 依赖 deviceUuid 定位设备，缺失会返回 1001
+          ...(credential.deviceUuid ? { deviceUuid: credential.deviceUuid } : {}),
+          platform: getDesktopPlatform(),
+        });
         logger.info('pushToken 上报成功');
         return;
       } catch (err: any) {
+        // code=1001 设备不存在：凭证已失效，无需重试，走登出并要求重新登录
+        if (err?.code === 1001) {
+          logger.warn('pushToken 上报失败: 设备不存在(code=1001)，执行登出并跳转登录页');
+          await this.handleDeviceNotExist();
+          return;
+        }
         logger.warn(`pushToken 上报失败 (${i + 1}/3): code=${err?.code} msg=${err?.message}`);
         if (i < 2) await sleep(delays[i]);
       }
     }
     logger.warn('pushToken 上报失败，已达最大重试次数');
+  }
+
+  // 设备不存在(1001)：清除登录态（保留 deviceUuid 设备身份）、断开 WS、
+  // 停止定时上报，并跳转登录页要求用户重新登录
+  private async handleDeviceNotExist(): Promise<void> {
+    this.stopPushTokenReportSchedule();
+    await CredentialManager.clearCredential();
+    this.disconnect();
+    WindowManager.navigateToLogin();
   }
 
   handleNetworkOffline(): void {
@@ -397,6 +423,25 @@ class WsManagerClass {
   async reportPushTokenIfNeeded(): Promise<void> {
     if (this.pushToken) {
       await this.reportPushToken(this.pushToken);
+    }
+  }
+
+  // 兜底定时任务：每 1h 主动上报一次 pushToken（登录态由 reportPushToken 内部自检，
+  // 未登录自动跳过）。幂等，重复调用不会创建多个定时器。不立即触发，
+  // 登录 / DEVICE_INIT 已各自上报过，等满间隔才首报。
+  startPushTokenReportSchedule(): void {
+    if (this.pushTokenReportTimer) return;
+    this.pushTokenReportTimer = setInterval(() => {
+      if (this.pushToken) {
+        this.reportPushToken(this.pushToken);
+      }
+    }, this.PUSH_TOKEN_REPORT_INTERVAL);
+  }
+
+  stopPushTokenReportSchedule(): void {
+    if (this.pushTokenReportTimer) {
+      clearInterval(this.pushTokenReportTimer);
+      this.pushTokenReportTimer = null;
     }
   }
 }

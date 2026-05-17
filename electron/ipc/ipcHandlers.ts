@@ -47,22 +47,30 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.AUTH_LOGIN, async (_, code: string) => {
     const deviceName = getDeviceName();
     const platform = getDesktopPlatform();
-    const pushToken = WsManager.getPushToken();
+    const existing = await CredentialManager.getCredential();
+    const pushToken = WsManager.getPushToken() || existing?.pushToken || undefined;
     // pushToken 为空时不传该字段（后端需放宽校验，PRD §7.2 P0）
     const params: any = { code, deviceName, platform };
     if (pushToken) {
       params.pushToken = pushToken;
+    }
+    // 复用已落盘的 deviceUuid，让服务端复用同一设备而非新建，保持设备身份不变
+    if (existing?.deviceUuid) {
+      params.deviceUuid = existing.deviceUuid;
     }
     const result = await ApiService.registerDevice(params);
     // P0 安全修复：凭证保存在 Main Process 内部完成，不暴露给 Renderer
     if (result?.deviceToken) {
       await CredentialManager.saveCredential({
         deviceToken: result.deviceToken,
-        deviceUuid: result.deviceUuid,
+        // 服务端未回 deviceUuid 时兜底用旧值，保持 deviceUuid 永久不变
+        deviceUuid: result.deviceUuid || existing?.deviceUuid,
         pushToken: pushToken || undefined,
       });
       // 登录成功后，上报 pushToken 到服务端（之前未登录时跳过了）
       WsManager.reportPushTokenIfNeeded();
+      // 拉起 1h 兜底定时上报（幂等；覆盖「登出后同会话再次登录」场景）
+      WsManager.startPushTokenReportSchedule();
     }
     return result;
   });
@@ -71,6 +79,7 @@ export function registerIpcHandlers(): void {
     await ApiService.logout().catch(() => {});
     await CredentialManager.clearCredential();
     WsManager.disconnect();
+    WsManager.stopPushTokenReportSchedule();
     WindowManager.navigateToLogin();
   });
 
