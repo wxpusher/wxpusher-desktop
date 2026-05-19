@@ -13,6 +13,9 @@ interface Props {
   onRefresh: () => void;
 }
 
+// 刷新按钮旋转一圈的时长（与 global.scss 中 icon-spin 动画周期保持一致）
+const SPIN_MS = 800;
+
 export default function MessageList({ onSelect, selectedMessageId, onLoadMore, onRefresh }: Props) {
   const messages = useAppStore((s) => s.messages);
   const selectedIds = useAppStore((s) => s.selectedIds);
@@ -38,6 +41,26 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
   } | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const lastClickedId = useRef<number | null>(null);
+
+  // 刷新按钮旋转状态：点击后旋转，加载完成且至少转满一圈后停止
+  const [isSpinning, setIsSpinning] = useState(false);
+  const spinStartRef = useRef(0);
+
+  const handleRefresh = () => {
+    if (isSpinning) return; // 防止旋转中重复触发
+    spinStartRef.current = Date.now();
+    setIsSpinning(true);
+    onRefresh();
+  };
+
+  useEffect(() => {
+    if (isSpinning && !isLoading) {
+      const elapsed = Date.now() - spinStartRef.current;
+      const remaining = Math.max(0, SPIN_MS - elapsed);
+      const t = setTimeout(() => setIsSpinning(false), remaining);
+      return () => clearTimeout(t);
+    }
+  }, [isSpinning, isLoading]);
 
   // 执行搜索
   const doSearch = useCallback(async (keyword: string) => {
@@ -317,7 +340,11 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
               <span className="refresh-time">
                 {lastRefreshTime ? `更新于 ${getRelativeDateTime(lastRefreshTime)}` : ''}
               </span>
-              <button className="icon-btn" onClick={onRefresh} title="刷新 (⌘/Ctrl+R)">
+              <button
+                className={`icon-btn${isSpinning ? ' spinning' : ''}`}
+                onClick={handleRefresh}
+                title="刷新 (⌘/Ctrl+R)"
+              >
                 <RefreshCw size={14} />
               </button>
               <button
