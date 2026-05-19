@@ -1,13 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Settings } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
 import MessageList from './MessageList';
 import MessageDetail from './MessageDetail';
+import SettingsPage from './SettingsPage';
 import type { MessageItem } from '../../types';
 
 export default function MessagePage() {
   const messages = useAppStore((s) => s.messages);
+  const loginInfo = useAppStore((s) => s.loginInfo);
   const [selectedMessage, setSelectedMessage] = useState<MessageItem | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const [listPaneWidth, setListPaneWidth] = useState(360);
   const isDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -15,7 +19,24 @@ export default function MessagePage() {
   const handleSelectMessage = useCallback((message: MessageItem | null) => {
     setSelectedMessage(message);
     setSelectedMessageId(message?.messageId ?? null);
+    if (message) setShowSettings(false);
   }, []);
+
+  const openSettings = useCallback(() => {
+    setShowSettings(true);
+    handleSelectMessage(null);
+  }, [handleSelectMessage]);
+
+  useEffect(() => {
+    const handleOpenSettings = () => openSettings();
+    const handleShowMessages = () => setShowSettings(false);
+    window.addEventListener('app:open-settings', handleOpenSettings);
+    window.addEventListener('app:show-messages', handleShowMessages);
+    return () => {
+      window.removeEventListener('app:open-settings', handleOpenSettings);
+      window.removeEventListener('app:show-messages', handleShowMessages);
+    };
+  }, [openSettings]);
 
   useEffect(() => {
     if (selectedMessageId === null) {
@@ -130,10 +151,24 @@ export default function MessagePage() {
           onLoadMore={loadMore}
           onRefresh={() => refreshMessages(1)}
         />
+        <div className="message-banner">
+          <div className="user-avatar">
+            {loginInfo?.nickName?.[0] || loginInfo?.uid?.[0] || 'U'}
+          </div>
+          <div className="user-name">{loginInfo?.nickName || loginInfo?.uid || '用户'}</div>
+          <button
+            className="banner-settings-btn"
+            onClick={openSettings}
+            title="设置 (⌘/Ctrl+,)"
+            aria-label="设置"
+          >
+            <Settings size={18} />
+          </button>
+        </div>
       </div>
       <div className="resize-handle" onMouseDown={handleMouseDown} />
       <div className="detail-pane">
-        <MessageDetail message={selectedMessage} />
+        {showSettings ? <SettingsPage /> : <MessageDetail message={selectedMessage} />}
       </div>
     </div>
   );

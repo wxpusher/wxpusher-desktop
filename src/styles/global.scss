@@ -253,32 +253,33 @@ button {
 /* ========================================
  * SIDEBAR
  * ======================================== */
-.sidebar {
-  width: var(--sidebar-width);
-  background: var(--color-bg-sidebar);
-  border-right: 1px solid var(--color-divider);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  padding: var(--spacing-base) 0;
-  transition: width var(--duration-base) var(--easing-standard);
-
-  &.collapsed {
-    width: var(--sidebar-collapsed);
-  }
-}
-
-.sidebar-user {
+.message-banner {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  padding: 0 var(--spacing-base) var(--spacing-base);
-  border-bottom: 1px solid var(--color-divider);
-  margin-bottom: var(--spacing-md);
-  cursor: pointer;
+  padding: var(--spacing-sm) var(--spacing-base);
+  border-top: 1px solid var(--color-divider);
+  background: var(--color-bg-container);
+  flex-shrink: 0;
+}
 
-  &:hover .user-name {
-    color: var(--color-primary);
+.banner-settings-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
   }
 }
 
@@ -297,91 +298,13 @@ button {
 }
 
 .user-name {
+  flex: 1;
   font-size: var(--font-size-base);
   font-weight: 500;
   color: var(--color-text-primary);
-  transition: color 0.15s;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.sidebar-nav {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 0 var(--spacing-sm);
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: 10px var(--spacing-md);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: var(--font-size-base);
-  color: var(--color-text-secondary);
-  transition: all 0.15s;
-  position: relative;
-
-  &:hover {
-    background: var(--color-bg-hover);
-    color: var(--color-text-primary);
-  }
-
-  &.active {
-    color: var(--color-primary);
-    background: var(--color-bg-container);
-    font-weight: 500;
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 8px;
-      bottom: 8px;
-      width: 3px;
-      background: var(--color-primary);
-      border-radius: 0 2px 2px 0;
-    }
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--color-focus-ring);
-    outline-offset: -2px;
-  }
-
-  svg {
-    flex-shrink: 0;
-  }
-}
-
-.sidebar-footer {
-  padding: var(--spacing-sm);
-  border-top: 1px solid var(--color-divider);
-  margin-top: auto;
-}
-
-.collapse-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  color: var(--color-text-tertiary);
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-  margin: 0 auto;
-
-  &:hover {
-    background: var(--color-bg-hover);
-    color: var(--color-text-primary);
-  }
 }
 
 /* ========================================
@@ -977,51 +900,11 @@ button {
 }
 
 /* ========================================
- * MARKET PAGE
- * ======================================== */
-.market-page {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.market-header {
-  padding: var(--spacing-md) var(--spacing-base);
-  border-bottom: 1px solid var(--color-divider);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-}
-
-.market-title {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-}
-
-.market-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.market-content {
-  flex: 1;
-  overflow: hidden;
-}
-
-.market-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-/* ========================================
  * SETTINGS PAGE
  * ======================================== */
 .settings-page {
   flex: 1;
+  height: 100%;
   overflow-y: auto;
   padding: var(--spacing-xl) var(--spacing-2xl);
 

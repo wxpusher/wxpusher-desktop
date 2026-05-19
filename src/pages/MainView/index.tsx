@@ -1,10 +1,6 @@
 import { useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../stores/appStore';
-import Sidebar from './Sidebar';
 import MessagePage from './MessagePage';
-import MarketPage from './MarketPage';
-import SettingsPage from './SettingsPage';
 import Toolbar from '../components/Toolbar';
 import NotificationBanner from '../components/NotificationBanner';
 import OnboardingGuide from '../components/OnboardingGuide';
@@ -12,9 +8,6 @@ import ToastContainer from '../components/ToastContainer';
 import './styles.scss';
 
 export default function MainView() {
-  const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed);
-  const navigate = useNavigate();
-
   useEffect(() => {
     // WS 新消息监听（P0 修复：返回清理函数）
     const offMsg = window.electronAPI.onNewMessage((msg) => {
@@ -32,7 +25,7 @@ export default function MainView() {
 
     // 通知点击
     const offClick = window.electronAPI.onNotificationClick((messageId) => {
-      navigate('/messages');
+      window.dispatchEvent(new CustomEvent('app:show-messages'));
       useAppStore.getState().updateMessage(messageId, { read: true });
     });
 
@@ -53,11 +46,7 @@ export default function MainView() {
       }
       if (isMod && e.key === ',') {
         e.preventDefault();
-        navigate('/settings');
-      }
-      if (isMod && e.key === '\\') {
-        e.preventDefault();
-        useAppStore.getState().toggleSidebar();
+        window.dispatchEvent(new CustomEvent('app:open-settings'));
       }
       // P0: ⌘W 遵循关闭行为设置
       if (isMod && e.key === 'w') {
@@ -72,22 +61,14 @@ export default function MainView() {
       offClick?.();
       window.removeEventListener('keydown', handleKeydown);
     };
-  }, [navigate]);
+  }, []);
 
   return (
-    <div className={`main-view ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <div className="main-view">
       <Toolbar />
       <NotificationBanner />
       <div className="main-body">
-        <Sidebar />
-        <div className="main-content">
-          <Routes>
-            <Route index element={<Navigate to="messages" replace />} />
-            <Route path="messages" element={<MessagePage />} />
-            <Route path="market" element={<MarketPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Routes>
-        </div>
+        <MessagePage />
       </div>
       <OnboardingGuide />
       <ToastContainer />

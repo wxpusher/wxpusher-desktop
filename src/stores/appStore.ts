@@ -24,10 +24,6 @@ interface AppState {
   // 主题
   isDarkMode: boolean;
 
-  // 侧边栏
-  sidebarCollapsed: boolean;
-  currentRoute: 'messages' | 'market' | 'settings';
-
   // 偏好
   onboardingCompleted: boolean;
   notifyPermissionDismissedAt: number | null;
@@ -46,9 +42,6 @@ interface AppState {
   setSearchKeyword: (keyword: string) => void;
   setSearchResults: (results: MessageItem[]) => void;
   setDarkMode: (dark: boolean) => void;
-  toggleSidebar: () => void;
-  setSidebarCollapsed: (collapsed: boolean) => void;
-  setCurrentRoute: (route: string) => void;
   setFocusedIndex: (index: number) => void;
   setLoading: (loading: boolean) => void;
   setHasMore: (hasMore: boolean) => void;
@@ -71,8 +64,6 @@ export const useAppStore = create<AppState>((set) => ({
   totalCount: null,
   focusedIndex: -1,
   isDarkMode: false,
-  sidebarCollapsed: false,
-  currentRoute: 'messages',
   onboardingCompleted: false,
   notifyPermissionDismissedAt: null,
 
@@ -97,9 +88,6 @@ export const useAppStore = create<AppState>((set) => ({
   setSearchKeyword: (keyword) => set({ searchKeyword: keyword }),
   setSearchResults: (results) => set({ searchResults: results }),
   setDarkMode: (dark) => set({ isDarkMode: dark }),
-  toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
-  setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
-  setCurrentRoute: (route) => set({ currentRoute: route as any }),
   setFocusedIndex: (index) => set({ focusedIndex: index }),
   setLoading: (loading) => set({ isLoading: loading }),
   setHasMore: (hasMore) => set({ hasMore }),
