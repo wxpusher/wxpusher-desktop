@@ -105,9 +105,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAllPrefs: () => ipcRenderer.invoke(IPC_CHANNELS.PREF_GET_ALL),
 
   // 自动更新
+  getAppVersion: () => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_VERSION),
   checkUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_CHECK),
+  downloadUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DOWNLOAD),
+  installUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_INSTALL),
   onUpdateStatus: (callback: (status: any) => void) => {
-    ipcRenderer.on(IPC_CHANNELS.UPDATE_STATUS, (_, status) => callback(status));
+    const handler = (_: any, status: any) => callback(status);
+    ipcRenderer.on(IPC_CHANNELS.UPDATE_STATUS, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.UPDATE_STATUS, handler);
+  },
+  onUpdateRequired: (callback: (msg: any) => void) => {
+    const handler = (_: any, msg: any) => callback(msg);
+    ipcRenderer.on(IPC_CHANNELS.WS_UPDATE_REQUIRED, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.WS_UPDATE_REQUIRED, handler);
   },
 
   // 开机自启

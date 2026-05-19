@@ -59,7 +59,9 @@ export const IPC_CHANNELS = {
   // 自动更新
   UPDATE_CHECK: 'update:check',
   UPDATE_DOWNLOAD: 'update:download',
+  UPDATE_INSTALL: 'update:install',
   UPDATE_STATUS: 'update:status',
+  APP_GET_VERSION: 'app:get-version',
 
   // 开机自启
   AUTO_LAUNCH_GET: 'auto-launch:get',

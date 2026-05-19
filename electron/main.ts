@@ -9,6 +9,7 @@ import { CredentialManager } from './managers/CredentialManager';
 import { PreferencesManager } from './managers/PreferencesManager';
 import { ApiService } from './managers/ApiService';
 import { NetworkManager } from './managers/NetworkManager';
+import { UpdateManager } from './managers/UpdateManager';
 import { registerIpcHandlers } from './ipc/ipcHandlers';
 import { IPC_CHANNELS } from './ipc/ipcChannels';
 import { setupCsp } from './utils/csp';
@@ -61,6 +62,9 @@ app.whenReady().then(async () => {
 
   // 7. 初始化网络管理器（统一处理网络变化与 WS 重连）
   NetworkManager.init();
+
+  // 7.1 初始化更新管理器（启动 10s 后首检 + 每 4h 静默检查）
+  UpdateManager.init();
 
   // 8. 检查是否有已保存的凭证（自动登录场景）
   const credential = await CredentialManager.getCredential();

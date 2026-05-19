@@ -7,7 +7,8 @@ import { WindowManager } from '../managers/WindowManager';
 import { NotificationManager } from '../managers/NotificationManager';
 import { PreferencesManager } from '../managers/PreferencesManager';
 import { ThemeManager } from '../managers/ThemeManager';
-import { getDesktopPlatform, getDeviceName } from '../utils/platform';
+import { UpdateManager } from '../managers/UpdateManager';
+import { getDesktopPlatform, getDeviceName, getAppVersion } from '../utils/platform';
 import { logger } from '../utils/logger';
 
 // URL 协议白名单（P0 安全修复：防止 file:// 等危险协议）
@@ -287,8 +288,24 @@ export function registerIpcHandlers(): void {
     WindowManager.sendToRenderer('webview:navigate', `${config.appFeUrl}/app#${route}`);
   });
 
+  // 检查更新（设置页按钮 → manual 源）：先查后端接口总闸，再按需走 electron-updater
   ipcMain.handle(IPC_CHANNELS.UPDATE_CHECK, async () => {
-    return ApiService.getVersionUpdate().catch(() => null);
+    return UpdateManager.checkForUpdates('manual');
+  });
+
+  // 手动流程：用户在弹窗点"立即更新"后触发下载
+  ipcMain.handle(IPC_CHANNELS.UPDATE_DOWNLOAD, async () => {
+    return UpdateManager.startDownload();
+  });
+
+  // 用户点"更新并重启"
+  ipcMain.handle(IPC_CHANNELS.UPDATE_INSTALL, () => {
+    UpdateManager.quitAndInstall();
+  });
+
+  // 当前应用版本号（设置页"关于"动态显示）
+  ipcMain.handle(IPC_CHANNELS.APP_GET_VERSION, () => {
+    return getAppVersion();
   });
 
   // ============ 环境配置（开发者选项） ============

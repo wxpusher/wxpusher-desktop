@@ -8,6 +8,27 @@ export interface MessageItem {
   createTime: number;
 }
 
+export type UpdatePhase =
+  | 'checking'
+  | 'no-update'
+  | 'available'
+  | 'downloading'
+  | 'downloaded'
+  | 'error';
+
+export interface UpdateStatus {
+  phase: UpdatePhase;
+  source: 'silent' | 'manual';
+  currentVersion: string;
+  title?: string;
+  content?: string;
+  latestVersion?: string;
+  forceUpdate?: boolean;
+  percent?: number;
+  message?: string;
+  dev?: boolean;
+}
+
 export interface LoginInfo {
   version: number;
   deviceToken: string;
@@ -88,8 +109,12 @@ declare global {
       getPref: (key: string) => Promise<unknown>;
       setPref: (key: string, value: unknown) => Promise<void>;
       getAllPrefs: () => Promise<Record<string, unknown>>;
-      checkUpdate: () => Promise<unknown>;
-      onUpdateStatus: (callback: (status: unknown) => void) => void;
+      getAppVersion: () => Promise<string>;
+      checkUpdate: () => Promise<UpdateStatus>;
+      downloadUpdate: () => Promise<void>;
+      installUpdate: () => Promise<void>;
+      onUpdateStatus: (callback: (status: UpdateStatus) => void) => (() => void) | undefined;
+      onUpdateRequired: (callback: (msg: unknown) => void) => (() => void) | undefined;
       getAutoLaunch: () => Promise<boolean>;
       setAutoLaunch: (enabled: boolean) => Promise<void>;
       runDiagnostics: () => Promise<unknown>;

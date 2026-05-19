@@ -56,6 +56,9 @@ function App() {
     window.electronAPI.getPref('notifyPermissionDismissedAt').then((v) => {
       if (v) useAppStore.getState().setNotifyPermissionDismissedAt(v);
     });
+    window.electronAPI.getPref('updateDismissedVersion').then((v) => {
+      if (v) useAppStore.getState().setUpdateDismissedVersion(v as string);
+    });
 
     // P0 修复：清理所有 IPC 监听器
     return () => {

@@ -5,6 +5,7 @@ import Toolbar from '../components/Toolbar';
 import NotificationBanner from '../components/NotificationBanner';
 import OnboardingGuide from '../components/OnboardingGuide';
 import ToastContainer from '../components/ToastContainer';
+import UpdateModal from '../components/UpdateModal';
 import './styles.scss';
 
 export default function MainView() {
@@ -27,6 +28,43 @@ export default function MainView() {
     const offClick = window.electronAPI.onNotificationClick((messageId) => {
       window.dispatchEvent(new CustomEvent('app:show-messages'));
       useAppStore.getState().updateMessage(messageId, { read: true });
+    });
+
+    // 更新状态：写入 store，并决定是否自动弹窗
+    const offUpdate = window.electronAPI.onUpdateStatus((status) => {
+      const store = useAppStore.getState();
+      store.setUpdateStatus(status);
+      if (status.phase === 'no-update' || status.phase === 'error') return;
+      const forced = !!status.forceUpdate;
+      const dismissed =
+        status.latestVersion != null &&
+        store.updateDismissedVersion === status.latestVersion;
+      // 强制：始终弹（阻塞）。普通：手动触发 或 已下载完成 才自动弹，且未被忽略
+      const shouldOpen =
+        forced ||
+        (!dismissed &&
+          (status.source === 'manual' || status.phase === 'downloaded') &&
+          (status.phase === 'available' || status.phase === 'downloaded'));
+      if (shouldOpen) store.setUpdateModalOpen(true);
+    });
+
+    // WS 强制更新（msgType 204）：归一到阻塞弹窗
+    const offUpdateReq = window.electronAPI.onUpdateRequired((msg) => {
+      const m = (msg ?? {}) as Record<string, unknown>;
+      const store = useAppStore.getState();
+      store.setUpdateStatus({
+        phase: 'available',
+        source: 'manual',
+        currentVersion: store.updateStatus?.currentVersion ?? '',
+        title: (m.title as string) || '需要更新',
+        content:
+          (m.content as string) ||
+          (m.msg as string) ||
+          '当前版本已不再支持，请更新后继续使用。',
+        latestVersion: (m.version as string) || (m.latestVersion as string),
+        forceUpdate: true,
+      });
+      store.setUpdateModalOpen(true);
     });
 
     // 键盘快捷键
@@ -59,6 +97,8 @@ export default function MainView() {
     return () => {
       offMsg?.();
       offClick?.();
+      offUpdate?.();
+      offUpdateReq?.();
       window.removeEventListener('keydown', handleKeydown);
     };
   }, []);
@@ -71,6 +111,7 @@ export default function MainView() {
         <MessagePage />
       </div>
       <OnboardingGuide />
+      <UpdateModal />
       <ToastContainer />
     </div>
   );

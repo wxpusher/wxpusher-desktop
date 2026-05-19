@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { MessageItem, LoginInfo } from '../types';
+import type { MessageItem, LoginInfo, UpdateStatus } from '../types';
 import { WS_STATUS, type WsStatusValue } from '../../electron/ipc/wsStatus';
 
 interface AppState {
@@ -23,6 +23,11 @@ interface AppState {
 
   // 主题
   isDarkMode: boolean;
+
+  // 更新
+  updateStatus: UpdateStatus | null;
+  updateModalOpen: boolean;
+  updateDismissedVersion: string | null;
 
   // 偏好
   onboardingCompleted: boolean;
@@ -48,6 +53,9 @@ interface AppState {
   setLastRefreshTime: (time: number) => void;
   setOnboardingCompleted: (completed: boolean) => void;
   setNotifyPermissionDismissedAt: (time: number | null) => void;
+  setUpdateStatus: (status: UpdateStatus | null) => void;
+  setUpdateModalOpen: (open: boolean) => void;
+  setUpdateDismissedVersion: (version: string | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -64,6 +72,9 @@ export const useAppStore = create<AppState>((set) => ({
   totalCount: null,
   focusedIndex: -1,
   isDarkMode: false,
+  updateStatus: null,
+  updateModalOpen: false,
+  updateDismissedVersion: null,
   onboardingCompleted: false,
   notifyPermissionDismissedAt: null,
 
@@ -94,4 +105,7 @@ export const useAppStore = create<AppState>((set) => ({
   setLastRefreshTime: (time) => set({ lastRefreshTime: time }),
   setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
   setNotifyPermissionDismissedAt: (time) => set({ notifyPermissionDismissedAt: time }),
+  setUpdateStatus: (status) => set({ updateStatus: status }),
+  setUpdateModalOpen: (open) => set({ updateModalOpen: open }),
+  setUpdateDismissedVersion: (version) => set({ updateDismissedVersion: version }),
 }));

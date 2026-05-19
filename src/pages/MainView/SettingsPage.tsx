@@ -5,6 +5,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
+import { showToast } from '../components/ToastContainer';
 
 interface DesktopPrefs {
   notificationMode: string;
@@ -44,6 +45,8 @@ export default function SettingsPage() {
   const [dataPath, setDataPath] = useState('');
   const [platform, setPlatform] = useState('');
   const [isDev, setIsDev] = useState(false);
+  const [appVersion, setAppVersion] = useState('');
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
 
   // 环境配置状态（开发者选项）
   const [envConfig, setEnvConfig] = useState<{ baseUrl: string; wsUrl: string; appFeUrl: string } | null>(null);
@@ -60,6 +63,7 @@ export default function SettingsPage() {
     window.electronAPI.getAutoLaunch().then(setAutoLaunch);
     window.electronAPI.getDataPath().then(setDataPath);
     window.electronAPI.getPlatform().then(setPlatform);
+    window.electronAPI.getAppVersion().then(setAppVersion);
     // 判断是否为开发模式（非打包状态）
     window.electronAPI.isPackaged().then((packaged) => {
       const isDevMode = !packaged;
@@ -147,6 +151,25 @@ export default function SettingsPage() {
     });
   }, []);
 
+
+  // 检查更新：结果交给全局监听处理（available/强制 → 弹窗），这里只处理"已是最新/失败"
+  const handleCheckUpdate = useCallback(async () => {
+    if (checkingUpdate) return;
+    setCheckingUpdate(true);
+    try {
+      const r = await window.electronAPI.checkUpdate();
+      if (r.phase === 'no-update') {
+        showToast('success', `已是最新版本 v${r.currentVersion}`);
+      } else if (r.phase === 'error') {
+        showToast('error', '检查更新失败，请稍后重试');
+      }
+      // available / forceUpdate：MainView 的 onUpdateStatus 监听会自动弹窗
+    } catch {
+      showToast('error', '检查更新失败，请稍后重试');
+    } finally {
+      setCheckingUpdate(false);
+    }
+  }, [checkingUpdate]);
 
   // ============ 环境配置（开发者选项） ============
   // 与 Android TestPanelActivity 对齐
@@ -383,7 +406,9 @@ export default function SettingsPage() {
         <div className="settings-row">
           <div className="settings-label">检查更新</div>
           <div className="settings-value">
-            <button onClick={() => window.electronAPI.checkUpdate()}>检查更新</button>
+            <button onClick={handleCheckUpdate} disabled={checkingUpdate}>
+              {checkingUpdate ? '检查中…' : '检查更新'}
+            </button>
           </div>
         </div>
         <div className="settings-row">
@@ -405,7 +430,7 @@ export default function SettingsPage() {
           <div className="settings-label">关于</div>
           <div className="settings-value">
             <div>
-              <div>WxPusher Desktop v1.0.0</div>
+              <div>WxPusher Desktop v{appVersion || '—'}</div>
               <div className="hint">平台：{platform}</div>
             </div>
           </div>
