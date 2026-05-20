@@ -295,7 +295,7 @@ export default function LoginView() {
                     onClick={(e) => {
                       e.preventDefault();
                       window.electronAPI.openExternal(
-                        'https://wxpusher.zjiecode.com/docs/agreement.html'
+                        'https://wxpusher.zjiecode.com/admin/agreement/index-argeement.html'
                       );
                     }}
                   >

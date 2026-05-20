@@ -415,12 +415,11 @@ export default function SettingsPage() {
           <div className="settings-label">用户协议</div>
           <div className="settings-value">
             <button
-              onClick={() => {
-                window.electronAPI.getPref('appFeUrl').then((url) => {
-                  const appFeUrl = url || 'https://wxpusher.zjiecode.com';
-                  window.electronAPI.showBrowserView(`${appFeUrl}/app#/agreement`);
-                });
-              }}
+              onClick={() =>
+                window.electronAPI.openExternal(
+                  'https://wxpusher.zjiecode.com/admin/agreement/index-argeement.html'
+                )
+              }
             >
               查看
             </button>
