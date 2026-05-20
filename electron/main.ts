@@ -18,8 +18,10 @@ import { getResourcePath } from './utils/platform';
 let mainWindow: BrowserWindow | null = null;
 
 // 应用显示名称（macOS 菜单栏/程序坞、dev 模式默认会显示 "Electron"，需显式覆盖）
-const APP_NAME = 'WxPusher消息推送平台';
-app.setName(APP_NAME);
+const APP_DISPLAY_NAME = 'WxPusher消息推送平台';
+// Linux WM_CLASS 须为 ASCII，否则 GNOME 顶栏将 UTF-8 误作 Latin-1 显示乱码（Electron #33903）
+const LINUX_WM_CLASS = 'wxpusher-desktop';
+app.setName(process.platform === 'linux' ? LINUX_WM_CLASS : APP_DISPLAY_NAME);
 // Windows 任务栏/通知归属，避免显示为 electron.app.*
 app.setAppUserModelId('com.smjcco.wxpusher.desktop');
 

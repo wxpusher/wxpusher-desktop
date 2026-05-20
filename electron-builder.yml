@@ -1,5 +1,6 @@
 appId: com.smjcco.wxpusher.desktop
-productName: WxPusher消息推送平台
+# 全局 productName 使用 ASCII，避免 Linux WM_CLASS 中文乱码；mac/win 见平台覆盖
+productName: WxPusher
 copyright: Copyright © 2026 四川思明今创科技有限公司
 
 directories:
@@ -16,6 +17,7 @@ extraResources:
     to: resources/
 
 mac:
+  productName: WxPusher消息推送平台
   category: public.app-category.productivity
   icon: resources/icon.icns
   hardenedRuntime: true
@@ -26,6 +28,7 @@ mac:
   notarize: false
 
 win:
+  productName: WxPusher消息推送平台
   icon: resources/icon.ico
   target:
     - nsis
@@ -38,6 +41,7 @@ nsis:
   deleteAppDataOnUninstall: false
 
 linux:
+  executableName: wxpusher-desktop
   icon: resources/icon.png
   category: Utility
   target:
