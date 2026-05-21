@@ -62,7 +62,10 @@ export default function SettingsPage() {
     window.electronAPI.checkNotificationPermission().then(setNotifPermission);
     window.electronAPI.getAutoLaunch().then(setAutoLaunch);
     window.electronAPI.getDataPath().then(setDataPath);
-    window.electronAPI.getPlatform().then(setPlatform);
+    window.electronAPI.getPlatform().then((p) => {
+      const label = { darwin: 'Mac', win32: 'Windows', linux: 'Linux' }[p] || p;
+      setPlatform(label);
+    });
     window.electronAPI.getAppVersion().then(setAppVersion);
     // 判断是否为开发模式（非打包状态）
     window.electronAPI.isPackaged().then((packaged) => {
@@ -404,14 +407,6 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="settings-row">
-          <div className="settings-label">检查更新</div>
-          <div className="settings-value">
-            <button onClick={handleCheckUpdate} disabled={checkingUpdate}>
-              {checkingUpdate ? '检查中…' : '检查更新'}
-            </button>
-          </div>
-        </div>
-        <div className="settings-row">
           <div className="settings-label">用户协议</div>
           <div className="settings-value">
             <button
@@ -426,12 +421,12 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="settings-row">
-          <div className="settings-label">关于</div>
+          <div className="settings-label">版本</div>
           <div className="settings-value">
-            <div>
-              <div>WxPusher Desktop v{appVersion || '—'}</div>
-              <div className="hint">平台：{platform}</div>
-            </div>
+            <span>WxPusher Desktop For {platform} v{appVersion || '—'}</span>
+            <button onClick={handleCheckUpdate} disabled={checkingUpdate}>
+              {checkingUpdate ? '检查中…' : '检查更新'}
+            </button>
           </div>
         </div>
       </div>
