@@ -186,7 +186,9 @@ export function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.AUTO_LAUNCH_SET, (_, enabled: boolean) => {
-    app.setLoginItemSettings({ openAtLogin: enabled });
+    // 带上自定义参数:Windows/Linux 登录项启动时会携带,主进程据此识别"开机自启启动"
+    // (macOS 用 getLoginItemSettings().wasOpenedAtLogin 识别,args 忽略但无害)
+    app.setLoginItemSettings({ openAtLogin: enabled, args: ['--opened-at-login'] });
   });
 
   // 系统操作（P0 安全修复：URL 协议白名单）

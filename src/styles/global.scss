@@ -1089,7 +1089,9 @@ button {
   align-items: center;
   gap: var(--spacing-sm);
 
-  button {
+  // 排除 antd 组件渲染出的 <button>(如 Switch 的 .ant-switch),
+  // 否则会把方形边框、小圆角等样式套到开关上,导致开关变成方块。
+  button:not(.ant-switch) {
     padding: 4px 12px;
     border-radius: var(--radius-xs);
     border: 1px solid var(--color-border);

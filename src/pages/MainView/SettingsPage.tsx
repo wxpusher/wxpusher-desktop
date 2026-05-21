@@ -347,7 +347,7 @@ export default function SettingsPage() {
                 window.electronAPI.setAutoLaunch(checked);
               }}
             />
-            <span className="hint">默认关闭</span>
+            <span className="hint">强烈建议您打开，避免遗漏消息</span>
           </div>
         </div>
         <div className="settings-row">
@@ -369,13 +369,6 @@ export default function SettingsPage() {
               checked={prefs.launchShowMainWindow}
               onChange={(checked) => updatePref('launchShowMainWindow', checked)}
             />
-          </div>
-        </div>
-        <div className="settings-row">
-          <div className="settings-label">网络代理</div>
-          <div className="settings-value">
-            <span>当前：遵循系统代理</span>
-            <span className="hint">首版不提供自定义代理</span>
           </div>
         </div>
         <div className="settings-row">

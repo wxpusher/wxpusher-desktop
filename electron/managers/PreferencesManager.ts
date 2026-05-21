@@ -24,7 +24,7 @@ export interface DesktopPreferences {
 
 const defaults: DesktopPreferences = {
   launchAtLogin: false,
-  launchShowMainWindow: true,
+  launchShowMainWindow: false,
   closeBehavior: 'minimize_to_tray',
   sidebarWidth: 220,
   listPaneWidth: 360,

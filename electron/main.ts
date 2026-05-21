@@ -17,6 +17,16 @@ import { getResourcePath } from './utils/platform';
 
 let mainWindow: BrowserWindow | null = null;
 
+// 是否由"开机自启"触发启动:
+// - macOS:系统提供 wasOpenedAtLogin
+// - Windows/Linux:登录项启动时携带 AUTO_LAUNCH_SET 注入的 --opened-at-login 参数
+function wasLaunchedAtLogin(): boolean {
+  if (process.platform === 'darwin') {
+    return app.getLoginItemSettings().wasOpenedAtLogin;
+  }
+  return process.argv.includes('--opened-at-login');
+}
+
 // 应用显示名称（macOS 菜单栏/程序坞、dev 模式默认会显示 "Electron"，需显式覆盖）
 const APP_DISPLAY_NAME = 'WxPusher消息推送平台';
 // Linux WM_CLASS 须为 ASCII，否则 GNOME 顶栏将 UTF-8 误作 Latin-1 显示乱码（Electron #33903）
@@ -75,8 +85,12 @@ app.whenReady().then(async () => {
   const prodUrl = `file://${path.join(__dirname, '../dist/index.html')}`; // dist-electron/../dist/index.html
 
   // 先注册 ready-to-show，再 loadURL，避免事件丢失
+  // 开机自启启动时,若用户关闭了"启动后显示窗口",则只驻留托盘不弹窗;
+  // 手动打开应用始终显示窗口,避免点了图标却看不到界面。
   mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
+    if (!wasLaunchedAtLogin() || PreferencesManager.get('launchShowMainWindow')) {
+      mainWindow?.show();
+    }
   });
 
   // pushToken 每 1h 兜底上报（幂等；未登录时定时器空转且自跳过，登录后自然生效）
