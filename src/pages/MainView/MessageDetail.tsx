@@ -29,6 +29,8 @@ export default function MessageDetail({ message }: Props) {
   const loadGenRef = useRef(0);
   // did-fail-load 已判定失败的加载代次：此后该次加载的错误页 onLoad 不能再翻回成功
   const failedGenRef = useRef(-1);
+  // 上一次展示的消息 ID：自动标已读只在切换到「不同消息」时触发一次
+  const displayedIdRef = useRef<number | null>(null);
 
   const iframeKey = useMemo(() => {
     if (!message) return 'empty';
@@ -125,7 +127,15 @@ export default function MessageDetail({ message }: Props) {
 
   // 自动标已读
   useEffect(() => {
-    if (message && !message.read) {
+    if (!message) {
+      displayedIdRef.current = null;
+      return;
+    }
+    // 同一条消息的属性变化（如被标为未读）不应再触发自动标已读，否则会与
+    // 用户操作竞争：仅在切换到「不同消息」时标一次
+    if (displayedIdRef.current === message.messageId) return;
+    displayedIdRef.current = message.messageId;
+    if (!message.read) {
       window.electronAPI.markRead([message.messageId], true);
       useAppStore.getState().updateMessage(message.messageId, { read: true });
     }

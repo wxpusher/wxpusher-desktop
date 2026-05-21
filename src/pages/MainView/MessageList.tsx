@@ -164,6 +164,8 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
     try {
       await window.electronAPI.markRead(ids, read);
     } catch {
+      // 失败回滚乐观更新（标记是布尔翻转，回滚即取反）
+      ids.forEach((id) => store.updateMessage(id, { read: !read }));
       message.error('标记失败，请稍后重试', 5);
     }
   }, [message]);
