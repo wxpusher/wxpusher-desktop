@@ -13,28 +13,33 @@ class TrayManagerClass {
   private notificationMode: NotificationMode = 'normal';
   private lastUnreadCount = 0;
 
+  // 按平台加载专用托盘图标(资源由 scripts/gen-tray-icons.mjs 生成):
+  // - macOS:单色模板图标,菜单栏自动随深浅色反色;
+  // - Windows:多尺寸 ICO,按 DPI 自动选尺寸;
+  // - Linux:品牌紫 PNG。
+  // createFromPath 会在 macOS/Linux 自动加载同目录的 @2x 版本。
+  private loadTrayIcon(): Electron.NativeImage {
+    const file =
+      process.platform === 'darwin'
+        ? 'trayTemplate.png'
+        : process.platform === 'win32'
+          ? 'tray.ico'
+          : 'tray.png';
+
+    try {
+      const icon = nativeImage.createFromPath(getResourcePath(file));
+      if (icon.isEmpty()) return nativeImage.createEmpty();
+      if (process.platform === 'darwin') icon.setTemplateImage(true);
+      return icon;
+    } catch {
+      return nativeImage.createEmpty();
+    }
+  }
+
   init(mainWindow: BrowserWindow): void {
     this.mainWindow = mainWindow;
 
-    const iconPath = getResourcePath('icon.png');
-    let trayIcon: Electron.NativeImage;
-
-    try {
-      trayIcon = nativeImage.createFromPath(iconPath);
-      if (trayIcon.isEmpty()) {
-        trayIcon = nativeImage.createEmpty();
-      }
-    } catch {
-      trayIcon = nativeImage.createEmpty();
-    }
-
-    // macOS 菜单栏图标需要缩小
-    if (process.platform === 'darwin') {
-      trayIcon = trayIcon.resize({ width: 18, height: 18 });
-      trayIcon.setTemplateImage(true);
-    }
-
-    this.tray = new Tray(trayIcon);
+    this.tray = new Tray(this.loadTrayIcon());
     this.tray.setToolTip('WxPusher');
 
     this.tray.on('click', () => {
