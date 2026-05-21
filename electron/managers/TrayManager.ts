@@ -9,7 +9,6 @@ class TrayManagerClass {
   private tray: Tray | null = null;
   private mainWindow: BrowserWindow | null = null;
   private soundEnabled = true;
-  private paused = false;
 
   init(mainWindow: BrowserWindow): void {
     this.mainWindow = mainWindow;
@@ -43,7 +42,7 @@ class TrayManagerClass {
     this.updateContextMenu(0);
   }
 
-  // P0 补齐：静音模式 + 暂停接收 + 未读总数
+  // 托盘菜单：未读总数 + 显示窗口 + 通知声音 + 退出
   updateContextMenu(unreadCount: number): void {
     if (!this.tray) return;
 
@@ -66,19 +65,6 @@ class TrayManagerClass {
           this.soundEnabled = menuItem.checked;
           NotificationManager.setSound(this.soundEnabled);
           WindowManager.sendToRenderer('notify:set-sound', this.soundEnabled);
-        },
-      },
-      {
-        label: '暂停接收',
-        type: 'checkbox',
-        checked: this.paused,
-        click: (menuItem) => {
-          this.paused = menuItem.checked;
-          if (this.paused) {
-            WindowManager.sendToRenderer('ws:pause', true);
-          } else {
-            WindowManager.sendToRenderer('ws:pause', false);
-          }
         },
       },
       { type: 'separator' },
