@@ -101,7 +101,10 @@ declare global {
       deleteMessages: (ids: number[]) => Promise<{ success: number; failed: number }>;
       deleteAllMessages: () => Promise<void>;
       checkNotificationPermission: () => Promise<{ supported: boolean; granted: boolean }>;
-      setNotificationMode: (mode: string) => Promise<void>;
+      setNotificationSound: (enabled: boolean) => Promise<void>;
+      onNotificationSoundChanged: (
+        callback: (enabled: boolean) => void
+      ) => (() => void) | undefined;
       openNotificationSettings: () => Promise<void>;
       onNotificationClick: (callback: (messageId: number) => void) => (() => void) | undefined;
       getTheme: () => Promise<boolean>;

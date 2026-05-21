@@ -87,7 +87,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // 通知
   checkNotificationPermission: () => ipcRenderer.invoke(IPC_CHANNELS.NOTIFY_CHECK_PERMISSION),
-  setNotificationMode: (mode: string) => ipcRenderer.invoke(IPC_CHANNELS.NOTIFY_SET_MODE, mode),
+  setNotificationSound: (enabled: boolean) =>
+    ipcRenderer.invoke(IPC_CHANNELS.NOTIFY_SET_SOUND, enabled),
+  onNotificationSoundChanged: (callback: (enabled: boolean) => void) => {
+    const handler = (_: any, enabled: boolean) => callback(enabled);
+    ipcRenderer.on(IPC_CHANNELS.NOTIFY_SET_SOUND, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.NOTIFY_SET_SOUND, handler);
+  },
   openNotificationSettings: () => ipcRenderer.invoke(IPC_CHANNELS.NOTIFY_OPEN_SETTINGS),
   onNotificationClick: (callback: (messageId: number) => void) => {
     ipcRenderer.on(IPC_CHANNELS.NOTIFY_CLICK, (_, id) => callback(id));

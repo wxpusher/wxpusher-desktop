@@ -5,24 +5,19 @@ import { PreferencesManager } from './PreferencesManager';
 import { logger } from '../utils/logger';
 
 class NotificationManagerClass {
-  private notificationMode: 'all' | 'title_only' | 'badge_only' | 'muted' = 'all';
+  private notificationSound = true;
 
   init(): void {
-    this.notificationMode = PreferencesManager.get('notificationMode');
+    this.notificationSound = PreferencesManager.get('notificationSound');
   }
 
   showNotification(options: { title: string; body: string; messageId: number }): void {
-    logger.info(`showNotification: mode=${this.notificationMode} title=${options.title}`);
-    if (this.notificationMode === 'badge_only' || this.notificationMode === 'muted') {
-      logger.info('通知被抑制: mode=' + this.notificationMode);
-      this.updateBadge();
-      return;
-    }
+    logger.info(`showNotification: sound=${this.notificationSound} title=${options.title}`);
 
     const notificationOptions: NotificationConstructorOptions = {
       title: options.title,
-      body: this.notificationMode === 'title_only' ? '' : options.body,
-      silent: this.notificationMode === 'muted',
+      body: options.body,
+      silent: !this.notificationSound,
     };
 
     try {
@@ -72,16 +67,9 @@ class NotificationManagerClass {
     }
   }
 
-  setMode(mode: 'all' | 'title_only' | 'badge_only' | 'muted'): void {
-    this.notificationMode = mode;
-    PreferencesManager.set('notificationMode', mode);
-  }
-
-  private updateBadge(): void {
-    // 更新未读徽标计数
-    if (process.platform === 'darwin') {
-      // macOS dock badge 由渲染进程通过 IPC 设置
-    }
+  setSound(enabled: boolean): void {
+    this.notificationSound = enabled;
+    PreferencesManager.set('notificationSound', enabled);
   }
 }
 

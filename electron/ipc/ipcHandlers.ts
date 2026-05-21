@@ -32,7 +32,7 @@ const WRITABLE_PREF_KEYS = new Set([
   'listPaneWidth',
   'windowBounds',
   'sidebarCollapsed',
-  'notificationMode',
+  'notificationSound',
   'lockscreenPrivacy',
   'fontScale',
   'notifyPermissionDismissedAt',
@@ -150,8 +150,8 @@ export function registerIpcHandlers(): void {
     return NotificationManager.checkPermission();
   });
 
-  ipcMain.handle(IPC_CHANNELS.NOTIFY_SET_MODE, (_, mode: string) => {
-    NotificationManager.setMode(mode as any);
+  ipcMain.handle(IPC_CHANNELS.NOTIFY_SET_SOUND, (_, enabled: boolean) => {
+    NotificationManager.setSound(enabled);
   });
 
   ipcMain.handle(IPC_CHANNELS.NOTIFY_OPEN_SETTINGS, () => {

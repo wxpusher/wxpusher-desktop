@@ -8,7 +8,7 @@ export interface DesktopPreferences {
   listPaneWidth: number;
   windowBounds: { displayId: string; x: number; y: number; w: number; h: number } | null;
   sidebarCollapsed: boolean;
-  notificationMode: 'all' | 'title_only' | 'badge_only' | 'muted';
+  notificationSound: boolean;
   lockscreenPrivacy: boolean;
   fontScale: number;
   notifyPermissionDismissedAt: number | null;
@@ -30,7 +30,7 @@ const defaults: DesktopPreferences = {
   listPaneWidth: 360,
   windowBounds: null,
   sidebarCollapsed: false,
-  notificationMode: 'all',
+  notificationSound: true,
   lockscreenPrivacy: false,
   fontScale: 1.0,
   notifyPermissionDismissedAt: null,
@@ -45,6 +45,16 @@ const defaults: DesktopPreferences = {
 };
 
 const store = new Store<DesktopPreferences>({ defaults });
+
+// 一次性迁移：旧版本用 notificationMode（all/title_only/badge_only/muted），
+// 现已统一为 notificationSound 开关。曾设为 muted/badge_only 的用户保留为静音。
+if (store.has('notificationMode' as any)) {
+  const legacy = store.get('notificationMode' as any) as string;
+  if (legacy === 'muted' || legacy === 'badge_only') {
+    store.set('notificationSound', false);
+  }
+  store.delete('notificationMode' as any);
+}
 
 export class PreferencesManager {
   static get<K extends keyof DesktopPreferences>(key: K): DesktopPreferences[K] {

@@ -1,13 +1,14 @@
 import { Tray, Menu, nativeImage, BrowserWindow, app } from 'electron';
 import { WindowManager } from './WindowManager';
 import { PreferencesManager } from './PreferencesManager';
+import { NotificationManager } from './NotificationManager';
 import { logger } from '../utils/logger';
 import { getResourcePath } from '../utils/platform';
 
 class TrayManagerClass {
   private tray: Tray | null = null;
   private mainWindow: BrowserWindow | null = null;
-  private muted = false;
+  private soundEnabled = true;
   private paused = false;
 
   init(mainWindow: BrowserWindow): void {
@@ -38,7 +39,7 @@ class TrayManagerClass {
       WindowManager.showMainWindow();
     });
 
-    this.muted = PreferencesManager.get('notificationMode') === 'muted';
+    this.soundEnabled = PreferencesManager.get('notificationSound');
     this.updateContextMenu(0);
   }
 
@@ -58,14 +59,13 @@ class TrayManagerClass {
       },
       { type: 'separator' },
       {
-        label: '静音模式',
+        label: '通知声音',
         type: 'checkbox',
-        checked: this.muted,
+        checked: this.soundEnabled,
         click: (menuItem) => {
-          this.muted = menuItem.checked;
-          const mode = this.muted ? 'muted' : 'all';
-          PreferencesManager.set('notificationMode', mode as any);
-          WindowManager.sendToRenderer('notify:set-mode', mode);
+          this.soundEnabled = menuItem.checked;
+          NotificationManager.setSound(this.soundEnabled);
+          WindowManager.sendToRenderer('notify:set-sound', this.soundEnabled);
         },
       },
       {

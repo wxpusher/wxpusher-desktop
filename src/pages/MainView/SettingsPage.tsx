@@ -8,7 +8,7 @@ import { useAppStore } from '../../stores/appStore';
 import { showToast } from '../components/ToastContainer';
 
 interface DesktopPrefs {
-  notificationMode: string;
+  notificationSound: boolean;
   closeBehavior: string;
   launchShowMainWindow: boolean;
   [key: string]: unknown;
@@ -84,6 +84,13 @@ export default function SettingsPage() {
     };
     window.addEventListener('focus', check);
     return () => window.removeEventListener('focus', check);
+  }, []);
+
+  // 托盘菜单切换「通知声音」时同步设置页开关
+  useEffect(() => {
+    return window.electronAPI.onNotificationSoundChanged((enabled) => {
+      setPrefs((prev: any) => (prev ? { ...prev, notificationSound: enabled } : prev));
+    });
   }, []);
 
   const loadPrefs = async () => {
@@ -316,20 +323,15 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="settings-row">
-          <div className="settings-label">通知行为</div>
+          <div className="settings-label">通知声音</div>
           <div className="settings-value">
-            <Radio.Group
-              value={prefs.notificationMode}
-              onChange={(e) => {
-                updatePref('notificationMode', e.target.value);
-                window.electronAPI.setNotificationMode(e.target.value);
+            <Switch
+              checked={prefs.notificationSound !== false}
+              onChange={(checked) => {
+                updatePref('notificationSound', checked);
+                window.electronAPI.setNotificationSound(checked);
               }}
-            >
-              <Radio value="all">全部消息</Radio>
-              <Radio value="title_only">仅显示标题</Radio>
-              <Radio value="badge_only">仅徽标不弹横幅</Radio>
-              <Radio value="muted">静音</Radio>
-            </Radio.Group>
+            />
           </div>
         </div>
       </div>
