@@ -90,6 +90,9 @@ app.whenReady().then(async () => {
   mainWindow.once('ready-to-show', () => {
     if (!wasLaunchedAtLogin() || PreferencesManager.get('launchShowMainWindow')) {
       mainWindow?.show();
+    } else if (process.platform === 'darwin') {
+      // 仅驻留托盘不弹窗时,macOS 同步隐藏 Dock 图标
+      app.dock?.hide();
     }
   });
 
@@ -120,7 +123,11 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
+  // 关窗后窗口只隐藏不销毁,优先唤回已隐藏窗口;确实不存在时才重建
+  const win = WindowManager.getMainWindow();
+  if (win && !win.isDestroyed()) {
+    WindowManager.showMainWindow();
+  } else {
     mainWindow = WindowManager.createMainWindow();
     const isPackaged = app.isPackaged;
     const devUrl = 'http://localhost:5173';

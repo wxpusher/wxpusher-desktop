@@ -3,7 +3,6 @@ import Store from 'electron-store';
 export interface DesktopPreferences {
   launchAtLogin: boolean;
   launchShowMainWindow: boolean;
-  closeBehavior: 'minimize_to_tray' | 'exit';
   sidebarWidth: number;
   listPaneWidth: number;
   windowBounds: { displayId: string; x: number; y: number; w: number; h: number } | null;
@@ -25,7 +24,6 @@ export interface DesktopPreferences {
 const defaults: DesktopPreferences = {
   launchAtLogin: false,
   launchShowMainWindow: false,
-  closeBehavior: 'minimize_to_tray',
   sidebarWidth: 220,
   listPaneWidth: 360,
   windowBounds: null,
@@ -54,6 +52,11 @@ if (store.has('notificationMode' as any)) {
     store.set('notificationSound', false);
   }
   store.delete('notificationMode' as any);
+}
+
+// 一次性清理:closeBehavior 开关已移除,关窗统一隐藏到后台。
+if (store.has('closeBehavior' as any)) {
+  store.delete('closeBehavior' as any);
 }
 
 export class PreferencesManager {

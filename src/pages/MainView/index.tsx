@@ -86,7 +86,7 @@ export default function MainView() {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('app:open-settings'));
       }
-      // P0: ⌘W 遵循关闭行为设置
+      // ⌘W 关闭窗口(隐藏到后台,程序继续运行收消息)
       if (isMod && e.key === 'w') {
         e.preventDefault();
         window.electronAPI.closeWindow();

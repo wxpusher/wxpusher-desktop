@@ -27,7 +27,6 @@ function isSafeUrl(url: string): boolean {
 const WRITABLE_PREF_KEYS = new Set([
   'launchAtLogin',
   'launchShowMainWindow',
-  'closeBehavior',
   'sidebarWidth',
   'listPaneWidth',
   'windowBounds',

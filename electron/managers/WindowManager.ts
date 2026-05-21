@@ -95,12 +95,12 @@ export class WindowManager {
     win.on('resize', debouncedSave);
     win.on('move', debouncedSave);
 
-    // 关闭窗口行为
+    // 关闭窗口:隐藏到后台,程序继续运行收消息;真正退出走托盘菜单
     win.on('close', (e) => {
-      const behavior = PreferencesManager.get('closeBehavior');
-      if (behavior === 'minimize_to_tray' && !(app as any).isQuitting) {
+      if (!(app as any).isQuitting) {
         e.preventDefault();
-        win.hide();
+        win.hide(); // Win/Linux:隐藏后自动移出任务栏
+        if (process.platform === 'darwin') app.dock?.hide(); // macOS:额外移除 Dock 图标
       }
     });
 
@@ -119,6 +119,7 @@ export class WindowManager {
 
   static showMainWindow(): void {
     if (this.mainWindow) {
+      if (process.platform === 'darwin') app.dock?.show();
       if (this.mainWindow.isMinimized()) this.mainWindow.restore();
       this.mainWindow.show();
       this.mainWindow.focus();

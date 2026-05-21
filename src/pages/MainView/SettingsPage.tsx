@@ -9,7 +9,6 @@ import { showToast } from '../components/ToastContainer';
 
 interface DesktopPrefs {
   notificationSound: boolean;
-  closeBehavior: string;
   launchShowMainWindow: boolean;
   [key: string]: unknown;
 }
@@ -350,18 +349,6 @@ export default function SettingsPage() {
               }}
             />
             <span className="hint">强烈建议您打开，避免遗漏消息</span>
-          </div>
-        </div>
-        <div className="settings-row">
-          <div className="settings-label">关闭主窗口行为</div>
-          <div className="settings-value">
-            <Radio.Group
-              value={prefs.closeBehavior}
-              onChange={(e) => updatePref('closeBehavior', e.target.value)}
-            >
-              <Radio value="minimize_to_tray">最小化到托盘</Radio>
-              <Radio value="exit">退出应用</Radio>
-            </Radio.Group>
           </div>
         </div>
         <div className="settings-row">
