@@ -24,10 +24,10 @@ export default function MainView() {
       useAppStore.getState().prependMessages([item]);
     });
 
-    // 通知点击
+    // 通知点击：切回消息视图并在列表中选中该消息（选中后 MessageDetail 会自动标已读）
     const offClick = window.electronAPI.onNotificationClick((messageId) => {
       window.dispatchEvent(new CustomEvent('app:show-messages'));
-      useAppStore.getState().updateMessage(messageId, { read: true });
+      window.dispatchEvent(new CustomEvent('app:select-message', { detail: messageId }));
     });
 
     // 更新状态：写入 store，并决定是否自动弹窗

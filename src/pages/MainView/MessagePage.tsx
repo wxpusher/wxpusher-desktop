@@ -30,13 +30,23 @@ export default function MessagePage() {
   useEffect(() => {
     const handleOpenSettings = () => openSettings();
     const handleShowMessages = () => setShowSettings(false);
+    // 系统通知点击：在列表中选中该消息并加载右侧详情
+    const handleSelectFromNotification = (e: Event) => {
+      const messageId = (e as CustomEvent<number>).detail;
+      const msg = useAppStore
+        .getState()
+        .messages.find((m) => m.messageId === messageId);
+      if (msg) handleSelectMessage(msg);
+    };
     window.addEventListener('app:open-settings', handleOpenSettings);
     window.addEventListener('app:show-messages', handleShowMessages);
+    window.addEventListener('app:select-message', handleSelectFromNotification);
     return () => {
       window.removeEventListener('app:open-settings', handleOpenSettings);
       window.removeEventListener('app:show-messages', handleShowMessages);
+      window.removeEventListener('app:select-message', handleSelectFromNotification);
     };
-  }, [openSettings]);
+  }, [openSettings, handleSelectMessage]);
 
   useEffect(() => {
     if (selectedMessageId === null) {
