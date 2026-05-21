@@ -33,13 +33,6 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
     y: number;
     msg: MessageItem;
   } | null>(null);
-  // P0: 撤销删除 toast 状态
-  const [undoToast, setUndoToast] = useState<{
-    ids: number[];
-    count: number;
-    countdown: number;
-    timer: NodeJS.Timeout;
-  } | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const lastClickedId = useRef<number | null>(null);
 
@@ -170,56 +163,28 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
     }
   }, [message]);
 
-  // P0 修复：删除（带 5 秒倒计时 + 撤销按钮）
+  // 删除消息：确认弹窗 → 确认后直接删除
   const handleDelete = useCallback((ids: number[]) => {
-    const store = useAppStore.getState();
-    // 取消之前的待确认删除
-    if (undoToast) {
-      clearTimeout(undoToast.timer);
-    }
-
-    // 保存被删除的消息用于撤销恢复
-    const deletedMessages = store.messages.filter((m) => ids.includes(m.messageId));
-
-    // 本地立即移除
-    store.removeMessages(ids);
-
-    let countdown = 5;
-    // 5 秒后真正调用后端删除
-    const timer = setTimeout(async () => {
-      try {
-        await window.electronAPI.deleteMessages(ids);
-      } catch {
-        // 删除失败，恢复消息
-        store.prependMessages(deletedMessages);
-      }
-      setUndoToast(null);
-    }, 5000);
-
-    setUndoToast({ ids, count: ids.length, countdown, timer });
-
-    // 倒计时
-    const countdownTimer = setInterval(() => {
-      countdown--;
-      setUndoToast((prev) => (prev ? { ...prev, countdown } : null));
-      if (countdown <= 0) {
-        clearInterval(countdownTimer);
-      }
-    }, 1000);
-  }, [undoToast]);
-
-  // 撤销删除
-  const handleUndoDelete = useCallback(() => {
-    if (!undoToast) return;
-    clearTimeout(undoToast.timer);
-    // 恢复消息：重新拉取列表
-    window.electronAPI
-      .getMessageList({ messageId: Number.MAX_SAFE_INTEGER, key: '', scene: 1 })
-      .then((data) => {
-        useAppStore.getState().setMessages(data || []);
-      });
-    setUndoToast(null);
-  }, [undoToast]);
+    if (ids.length === 0) return;
+    Modal.confirm({
+      title: '删除消息',
+      content: `确定删除选中的 ${ids.length} 条消息？删除后不可恢复。`,
+      okText: '删除',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        const store = useAppStore.getState();
+        const deleted = store.messages.filter((m) => ids.includes(m.messageId));
+        store.removeMessages(ids); // 同时会清掉 selectedIds 中的对应项
+        try {
+          await window.electronAPI.deleteMessages(ids);
+        } catch {
+          store.prependMessages(deleted); // 删除失败：恢复消息
+          message.error('删除失败，请稍后重试', 5);
+        }
+      },
+    });
+  }, [message]);
 
   // 键盘导航
   useEffect(() => {
@@ -447,18 +412,6 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
           </svg>
           <div className="title">{searchMode ? '没有匹配的消息' : '暂无消息'}</div>
           {!searchMode && <div className="link">为什么我收不到消息？</div>}
-        </div>
-      )}
-
-      {/* P0: 撤销删除 Toast（5 秒倒计时 + 撤销按钮） */}
-      {undoToast && (
-        <div className="undo-delete-toast">
-          <Trash2 size={16} />
-          <span>已删除 {undoToast.count} 条消息</span>
-          <button className="undo-btn" onClick={handleUndoDelete}>
-            撤销
-          </button>
-          <span className="countdown">{undoToast.countdown}s</span>
         </div>
       )}
 
