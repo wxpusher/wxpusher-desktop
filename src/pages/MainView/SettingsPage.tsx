@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Switch, Radio, Input, message, Modal } from 'antd';
+import { Switch, Radio, Input, App, Modal } from 'antd';
 import {
   FolderOpen,
   ExternalLink,
 } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
-import { showToast } from '../components/ToastContainer';
 
 interface DesktopPrefs {
   notificationMode: string;
@@ -34,6 +33,7 @@ function matchEnvChoice(current: string, prod: string, test: string): EnvChoice 
 }
 
 export default function SettingsPage() {
+  const { message } = App.useApp();
   const loginInfo = useAppStore((s) => s.loginInfo);
   const [prefs, setPrefs] = useState<DesktopPrefs | null>(null);
   const [notifPermission, setNotifPermission] = useState<{ supported: boolean; granted: boolean }>({
@@ -125,7 +125,7 @@ export default function SettingsPage() {
     try {
       const result = await window.electronAPI.checkNoMsg();
       if (!result) {
-        message.error('推送检查失败，请稍后重试');
+        message.error('推送检查失败，请稍后重试', 5);
         return;
       }
       // code === 0 表示状态正常，无异常时只用 toast 提示
@@ -168,13 +168,13 @@ export default function SettingsPage() {
     try {
       const r = await window.electronAPI.checkUpdate();
       if (r.phase === 'no-update') {
-        showToast('success', `已是最新版本 v${r.currentVersion}`);
+        message.success(`已是最新版本 v${r.currentVersion}`);
       } else if (r.phase === 'error') {
-        showToast('error', '检查更新失败，请稍后重试');
+        message.error('检查更新失败，请稍后重试', 5);
       }
       // available / forceUpdate：MainView 的 onUpdateStatus 监听会自动弹窗
     } catch {
-      showToast('error', '检查更新失败，请稍后重试');
+      message.error('检查更新失败，请稍后重试', 5);
     } finally {
       setCheckingUpdate(false);
     }
@@ -212,15 +212,15 @@ export default function SettingsPage() {
 
     // 校验自定义输入非空
     if (baseUrlChoice === 'custom' && !baseUrl) {
-      message.error('自定义 baseUrl 不能为空');
+      message.error('自定义 baseUrl 不能为空', 5);
       return;
     }
     if (wsUrlChoice === 'custom' && !wsUrl) {
-      message.error('自定义 wsUrl 不能为空');
+      message.error('自定义 wsUrl 不能为空', 5);
       return;
     }
     if (appFeUrlChoice === 'custom' && !appFeUrl) {
-      message.error('自定义 appFeUrl 不能为空');
+      message.error('自定义 appFeUrl 不能为空', 5);
       return;
     }
 
@@ -232,7 +232,7 @@ export default function SettingsPage() {
         window.electronAPI.restartApp();
       }, 500);
     } else {
-      message.error('配置保存失败，请检查 URL 格式');
+      message.error('配置保存失败，请检查 URL 格式', 5);
     }
   }, [baseUrlChoice, wsUrlChoice, appFeUrlChoice, customBaseUrl, customWsUrl, customAppFeUrl]);
 

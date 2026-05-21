@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Checkbox, Spin, Modal, Radio, Input, message } from 'antd';
+import { Checkbox, Spin, Modal, Radio, Input, App } from 'antd';
 import { ExternalLink, RefreshCw, Settings } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
 import type { LoginInfo } from '../../types';
@@ -26,6 +26,7 @@ function matchEnvChoice(current: string, prod: string, test: string): EnvChoice 
 }
 
 export default function LoginView() {
+  const { message } = App.useApp();
   const navigate = useNavigate();
   const wsStatus = useAppStore((s) => s.wsStatus);
   const [agreed, setAgreed] = useState(false);
@@ -221,15 +222,15 @@ export default function LoginView() {
     const appFeUrl = resolveEnvUrl(appFeUrlChoice, ENV_PROD.appFeUrl, ENV_TEST.appFeUrl, customAppFeUrl);
 
     if (baseUrlChoice === 'custom' && !baseUrl) {
-      message.error('自定义 baseUrl 不能为空');
+      message.error('自定义 baseUrl 不能为空', 5);
       return;
     }
     if (wsUrlChoice === 'custom' && !wsUrl) {
-      message.error('自定义 wsUrl 不能为空');
+      message.error('自定义 wsUrl 不能为空', 5);
       return;
     }
     if (appFeUrlChoice === 'custom' && !appFeUrl) {
-      message.error('自定义 appFeUrl 不能为空');
+      message.error('自定义 appFeUrl 不能为空', 5);
       return;
     }
 
@@ -241,7 +242,7 @@ export default function LoginView() {
         window.electronAPI.restartApp();
       }, 500);
     } else {
-      message.error('配置保存失败，请检查 URL 格式');
+      message.error('配置保存失败，请检查 URL 格式', 5);
     }
   }, [baseUrlChoice, wsUrlChoice, appFeUrlChoice, customBaseUrl, customWsUrl, customAppFeUrl]);
 

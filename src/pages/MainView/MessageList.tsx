@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { RefreshCw, Trash2, CheckCheck, X, Search } from 'lucide-react';
-import { Modal, Spin, message } from 'antd';
+import { Modal, Spin, App } from 'antd';
 import { useAppStore } from '../../stores/appStore';
 import { getRelativeDateTime } from '../../utils/time';
 import type { MessageItem } from '../../types';
@@ -17,6 +17,7 @@ interface Props {
 const SPIN_MS = 800;
 
 export default function MessageList({ onSelect, selectedMessageId, onLoadMore, onRefresh }: Props) {
+  const { message } = App.useApp();
   const messages = useAppStore((s) => s.messages);
   const selectedIds = useAppStore((s) => s.selectedIds);
   const isLoading = useAppStore((s) => s.isLoading);
@@ -163,9 +164,9 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
     try {
       await window.electronAPI.markRead(ids, read);
     } catch {
-      message.error('操作失败');
+      message.error('标记失败，请稍后重试', 5);
     }
-  }, []);
+  }, [message]);
 
   // P0 修复：删除（带 5 秒倒计时 + 撤销按钮）
   const handleDelete = useCallback((ids: number[]) => {

@@ -1233,50 +1233,6 @@ button {
 /* ========================================
  * TOAST
  * ======================================== */
-.toast-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 9999;
-}
-
-.toast {
-  background: var(--color-bg-container);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
-  box-shadow: var(--shadow-lg);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-primary);
-  min-width: 240px;
-  animation: toastIn 0.25s ease-out;
-
-  svg {
-    stroke-width: 2;
-    fill: none;
-    flex-shrink: 0;
-  }
-
-  &.success svg {
-    stroke: var(--color-success);
-  }
-  &.warning svg {
-    stroke: var(--color-warning);
-  }
-  &.error svg {
-    stroke: var(--color-error);
-  }
-  &.info svg {
-    stroke: var(--color-info);
-  }
-}
-
 @keyframes toastIn {
   from {
     opacity: 0;

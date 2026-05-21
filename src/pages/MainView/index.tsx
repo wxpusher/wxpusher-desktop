@@ -4,7 +4,6 @@ import MessagePage from './MessagePage';
 import Toolbar from '../components/Toolbar';
 import NotificationBanner from '../components/NotificationBanner';
 import OnboardingGuide from '../components/OnboardingGuide';
-import ToastContainer from '../components/ToastContainer';
 import UpdateModal from '../components/UpdateModal';
 import './styles.scss';
 
@@ -112,7 +111,6 @@ export default function MainView() {
       </div>
       <OnboardingGuide />
       <UpdateModal />
-      <ToastContainer />
     </div>
   );
 }

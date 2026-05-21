@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { ConfigProvider, theme } from 'antd';
+import { App as AntdApp, ConfigProvider, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import App from './App';
 import { useAppStore } from './stores/appStore';
@@ -20,7 +20,9 @@ function Root() {
         },
       }}
     >
-      <App />
+      <AntdApp message={{ duration: 2 }}>
+        <App />
+      </AntdApp>
     </ConfigProvider>
   );
 }
