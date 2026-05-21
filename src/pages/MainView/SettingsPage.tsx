@@ -8,7 +8,7 @@ import { useAppStore } from '../../stores/appStore';
 import { showToast } from '../components/ToastContainer';
 
 interface DesktopPrefs {
-  notificationSound: boolean;
+  notificationMode: string;
   launchShowMainWindow: boolean;
   [key: string]: unknown;
 }
@@ -85,10 +85,10 @@ export default function SettingsPage() {
     return () => window.removeEventListener('focus', check);
   }, []);
 
-  // 托盘菜单切换「通知声音」时同步设置页开关
+  // 托盘菜单切换「通知行为」时同步设置页选项
   useEffect(() => {
-    return window.electronAPI.onNotificationSoundChanged((enabled) => {
-      setPrefs((prev: any) => (prev ? { ...prev, notificationSound: enabled } : prev));
+    return window.electronAPI.onNotificationModeChanged((mode) => {
+      setPrefs((prev: any) => (prev ? { ...prev, notificationMode: mode } : prev));
     });
   }, []);
 
@@ -322,15 +322,19 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="settings-row">
-          <div className="settings-label">通知声音</div>
+          <div className="settings-label">通知行为</div>
           <div className="settings-value">
-            <Switch
-              checked={prefs.notificationSound !== false}
-              onChange={(checked) => {
-                updatePref('notificationSound', checked);
-                window.electronAPI.setNotificationSound(checked);
+            <Radio.Group
+              value={prefs.notificationMode || 'normal'}
+              onChange={(e) => {
+                updatePref('notificationMode', e.target.value);
+                window.electronAPI.setNotificationMode(e.target.value);
               }}
-            />
+            >
+              <Radio value="normal">正常通知</Radio>
+              <Radio value="silent">静音通知</Radio>
+              <Radio value="quiet">不通知提醒</Radio>
+            </Radio.Group>
           </div>
         </div>
       </div>

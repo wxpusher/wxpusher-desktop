@@ -5,6 +5,7 @@ import { CredentialManager } from '../managers/CredentialManager';
 import { WsManager } from '../managers/WsManager';
 import { WindowManager } from '../managers/WindowManager';
 import { NotificationManager } from '../managers/NotificationManager';
+import { TrayManager } from '../managers/TrayManager';
 import { PreferencesManager } from '../managers/PreferencesManager';
 import { ThemeManager } from '../managers/ThemeManager';
 import { UpdateManager } from '../managers/UpdateManager';
@@ -31,7 +32,7 @@ const WRITABLE_PREF_KEYS = new Set([
   'listPaneWidth',
   'windowBounds',
   'sidebarCollapsed',
-  'notificationSound',
+  'notificationMode',
   'lockscreenPrivacy',
   'fontScale',
   'notifyPermissionDismissedAt',
@@ -149,8 +150,9 @@ export function registerIpcHandlers(): void {
     return NotificationManager.checkPermission();
   });
 
-  ipcMain.handle(IPC_CHANNELS.NOTIFY_SET_SOUND, (_, enabled: boolean) => {
-    NotificationManager.setSound(enabled);
+  ipcMain.handle(IPC_CHANNELS.NOTIFY_SET_MODE, (_, mode: 'normal' | 'silent' | 'quiet') => {
+    NotificationManager.setMode(mode);
+    TrayManager.syncNotificationMode(mode);
   });
 
   ipcMain.handle(IPC_CHANNELS.NOTIFY_OPEN_SETTINGS, () => {

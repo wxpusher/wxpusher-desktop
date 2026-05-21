@@ -5,10 +5,13 @@ import { NotificationManager } from './NotificationManager';
 import { logger } from '../utils/logger';
 import { getResourcePath } from '../utils/platform';
 
+type NotificationMode = 'normal' | 'silent' | 'quiet';
+
 class TrayManagerClass {
   private tray: Tray | null = null;
   private mainWindow: BrowserWindow | null = null;
-  private soundEnabled = true;
+  private notificationMode: NotificationMode = 'normal';
+  private lastUnreadCount = 0;
 
   init(mainWindow: BrowserWindow): void {
     this.mainWindow = mainWindow;
@@ -38,13 +41,27 @@ class TrayManagerClass {
       WindowManager.showMainWindow();
     });
 
-    this.soundEnabled = PreferencesManager.get('notificationSound');
+    this.notificationMode = PreferencesManager.get('notificationMode');
     this.updateContextMenu(0);
   }
 
-  // 托盘菜单：未读总数 + 显示窗口 + 通知声音 + 退出
+  // 设置页改动通知行为时,由 ipcHandler 调用,刷新托盘子菜单的单选勾选
+  syncNotificationMode(mode: NotificationMode): void {
+    this.notificationMode = mode;
+    this.updateContextMenu(this.lastUnreadCount);
+  }
+
+  // 托盘子菜单点击通知行为
+  private onModeClick(mode: NotificationMode): void {
+    this.notificationMode = mode;
+    NotificationManager.setMode(mode);
+    WindowManager.sendToRenderer('notify:set-mode', mode);
+  }
+
+  // 托盘菜单：未读总数 + 显示窗口 + 通知行为 + 退出
   updateContextMenu(unreadCount: number): void {
     if (!this.tray) return;
+    this.lastUnreadCount = unreadCount;
 
     const contextMenu = Menu.buildFromTemplate([
       {
@@ -58,14 +75,27 @@ class TrayManagerClass {
       },
       { type: 'separator' },
       {
-        label: '通知声音',
-        type: 'checkbox',
-        checked: this.soundEnabled,
-        click: (menuItem) => {
-          this.soundEnabled = menuItem.checked;
-          NotificationManager.setSound(this.soundEnabled);
-          WindowManager.sendToRenderer('notify:set-sound', this.soundEnabled);
-        },
+        label: '通知行为',
+        submenu: [
+          {
+            label: '正常通知',
+            type: 'radio',
+            checked: this.notificationMode === 'normal',
+            click: () => this.onModeClick('normal'),
+          },
+          {
+            label: '静音通知',
+            type: 'radio',
+            checked: this.notificationMode === 'silent',
+            click: () => this.onModeClick('silent'),
+          },
+          {
+            label: '不通知提醒',
+            type: 'radio',
+            checked: this.notificationMode === 'quiet',
+            click: () => this.onModeClick('quiet'),
+          },
+        ],
       },
       { type: 'separator' },
       {

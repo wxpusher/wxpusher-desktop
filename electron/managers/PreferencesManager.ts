@@ -7,7 +7,7 @@ export interface DesktopPreferences {
   listPaneWidth: number;
   windowBounds: { displayId: string; x: number; y: number; w: number; h: number } | null;
   sidebarCollapsed: boolean;
-  notificationSound: boolean;
+  notificationMode: 'normal' | 'silent' | 'quiet';
   lockscreenPrivacy: boolean;
   fontScale: number;
   notifyPermissionDismissedAt: number | null;
@@ -28,7 +28,7 @@ const defaults: DesktopPreferences = {
   listPaneWidth: 360,
   windowBounds: null,
   sidebarCollapsed: false,
-  notificationSound: true,
+  notificationMode: 'normal',
   lockscreenPrivacy: false,
   fontScale: 1.0,
   notifyPermissionDismissedAt: null,
@@ -44,14 +44,20 @@ const defaults: DesktopPreferences = {
 
 const store = new Store<DesktopPreferences>({ defaults });
 
-// 一次性迁移：旧版本用 notificationMode（all/title_only/badge_only/muted），
-// 现已统一为 notificationSound 开关。曾设为 muted/badge_only 的用户保留为静音。
-if (store.has('notificationMode' as any)) {
-  const legacy = store.get('notificationMode' as any) as string;
-  if (legacy === 'muted' || legacy === 'badge_only') {
-    store.set('notificationSound', false);
-  }
-  store.delete('notificationMode' as any);
+// 一次性迁移:notificationSound 布尔(中间版本) 与 旧 4 档 notificationMode → 新三档
+if (store.has('notificationSound' as any)) {
+  store.set('notificationMode', store.get('notificationSound' as any) ? 'normal' : 'silent');
+  store.delete('notificationSound' as any);
+}
+const legacyMode = store.get('notificationMode' as any) as string | undefined;
+if (legacyMode && !['normal', 'silent', 'quiet'].includes(legacyMode)) {
+  const map: Record<string, 'normal' | 'silent' | 'quiet'> = {
+    all: 'normal',
+    title_only: 'normal',
+    muted: 'silent',
+    badge_only: 'quiet',
+  };
+  store.set('notificationMode', map[legacyMode] ?? 'normal');
 }
 
 // 一次性清理:closeBehavior 开关已移除,关窗统一隐藏到后台。

@@ -37,7 +37,7 @@ export const IPC_CHANNELS = {
   // 通知
   NOTIFY_CHECK_PERMISSION: 'notify:check-permission',
   NOTIFY_CLICK: 'notification:click',
-  NOTIFY_SET_SOUND: 'notify:set-sound',
+  NOTIFY_SET_MODE: 'notify:set-mode',
   NOTIFY_OPEN_SETTINGS: 'notify:open-settings',
 
   // 主题

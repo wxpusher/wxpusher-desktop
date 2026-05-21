@@ -5,19 +5,25 @@ import { PreferencesManager } from './PreferencesManager';
 import { logger } from '../utils/logger';
 
 class NotificationManagerClass {
-  private notificationSound = true;
+  private notificationMode: 'normal' | 'silent' | 'quiet' = 'normal';
 
   init(): void {
-    this.notificationSound = PreferencesManager.get('notificationSound');
+    this.notificationMode = PreferencesManager.get('notificationMode');
   }
 
   showNotification(options: { title: string; body: string; messageId: number }): void {
-    logger.info(`showNotification: sound=${this.notificationSound} title=${options.title}`);
+    logger.info(`showNotification: mode=${this.notificationMode} title=${options.title}`);
+
+    // 静默通知:不弹系统横幅、不出声;消息列表已由 WsManager 的 ws:new-message 更新
+    if (this.notificationMode === 'quiet') {
+      logger.info('静默通知:跳过系统弹窗');
+      return;
+    }
 
     const notificationOptions: NotificationConstructorOptions = {
       title: options.title,
       body: options.body,
-      silent: !this.notificationSound,
+      silent: this.notificationMode === 'silent',
     };
 
     try {
@@ -67,9 +73,9 @@ class NotificationManagerClass {
     }
   }
 
-  setSound(enabled: boolean): void {
-    this.notificationSound = enabled;
-    PreferencesManager.set('notificationSound', enabled);
+  setMode(mode: 'normal' | 'silent' | 'quiet'): void {
+    this.notificationMode = mode;
+    PreferencesManager.set('notificationMode', mode);
   }
 }
 
