@@ -127,7 +127,7 @@ export default function MessagePage() {
   const handleMouseDown = useCallback(() => {
     isDragging.current = true;
     document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
+    document.body.classList.add('resizing');
   }, []);
 
   useEffect(() => {
@@ -141,7 +141,7 @@ export default function MessagePage() {
     const handleMouseUp = () => {
       isDragging.current = false;
       document.body.style.cursor = '';
-      document.body.style.userSelect = '';
+      document.body.classList.remove('resizing');
     };
 
     window.addEventListener('mousemove', handleMouseMove);

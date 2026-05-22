@@ -19,6 +19,23 @@ body {
   font-size: var(--font-size-base);
   color: var(--color-text-primary);
   background: var(--color-bg-page);
+  /* 桌面应用：全局禁止选中文本，仅消息详情等处显式恢复 */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 输入控件恢复可选中/编辑 */
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* 拖拽分栏期间临时禁用详情区选择，避免拖拽误选 */
+body.resizing,
+body.resizing .detail-container {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .app {
@@ -173,8 +190,6 @@ button {
   border: 1px solid var(--color-border-light);
   white-space: nowrap;
   cursor: default;
-  user-select: none;
-  -webkit-user-select: none;
 
   // 自定义 tips：原生 title 在 Electron 标题栏区域、且状态切换时会丢失，
   // 这里用 data-tip 驱动，鼠标悬停时始终可见，状态变化也能实时更新
@@ -239,8 +254,6 @@ button {
 .app-version {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
-  user-select: none;
-  -webkit-user-select: none;
   white-space: nowrap;
 }
 
@@ -258,8 +271,6 @@ button {
   border: 1px solid var(--color-primary);
   white-space: nowrap;
   cursor: pointer;
-  user-select: none;
-  -webkit-user-select: none;
   -webkit-app-region: no-drag;
   transition: background 0.15s;
 
@@ -819,6 +830,9 @@ button {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* 消息详情：恢复文本可选中/复制 */
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .detail-header {
