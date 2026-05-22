@@ -43,7 +43,10 @@ class TrayManagerClass {
     this.tray.setToolTip('WxPusher');
 
     this.tray.on('click', () => {
-      WindowManager.showMainWindow();
+      // macOS 设置了 contextMenu 后左键已原生弹出菜单，避免重复弹出
+      if (process.platform !== 'darwin') {
+        this.tray?.popUpContextMenu();
+      }
     });
 
     this.notificationMode = PreferencesManager.get('notificationMode');
