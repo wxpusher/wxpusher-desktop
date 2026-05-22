@@ -463,6 +463,12 @@ button {
     flex-shrink: 0;
   }
 
+  /* 文本占满剩余空间,把按钮组顶到最右侧 */
+  span {
+    flex: 1;
+    min-width: 0;
+  }
+
   button {
     background: transparent;
     border: 1px solid var(--color-banner-error-text);
@@ -470,7 +476,7 @@ button {
     padding: 2px 12px;
     border-radius: var(--radius-xs);
     font-size: var(--font-size-xs);
-    margin-left: auto;
+    flex-shrink: 0;
 
     &.ignore {
       border-color: transparent;

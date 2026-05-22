@@ -53,9 +53,7 @@ function App() {
     window.electronAPI.getPref('onboardingCompleted').then((v) => {
       if (v) useAppStore.getState().setOnboardingCompleted(v);
     });
-    window.electronAPI.getPref('notifyPermissionDismissedAt').then((v) => {
-      if (v) useAppStore.getState().setNotifyPermissionDismissedAt(v);
-    });
+    // 通知横幅的「忽略」仅本次启动有效,不从偏好读取(不持久化)
     window.electronAPI.getPref('updateDismissedVersion').then((v) => {
       if (v) useAppStore.getState().setUpdateDismissedVersion(v as string);
     });

@@ -8,6 +8,14 @@ export interface MessageItem {
   createTime: number;
 }
 
+// 系统通知权限状态;guide 表示未授权时的引导方式
+// none=已授权 / settings=可打开系统设置 / manual=仅文案引导
+export interface NotifyPermissionState {
+  supported: boolean;
+  granted: boolean;
+  guide: 'none' | 'settings' | 'manual';
+}
+
 export type UpdatePhase =
   | 'checking'
   | 'no-update'
@@ -100,12 +108,12 @@ declare global {
       markRead: (ids: number[], read: boolean) => Promise<void>;
       deleteMessages: (ids: number[]) => Promise<{ success: number; failed: number }>;
       deleteAllMessages: () => Promise<void>;
-      checkNotificationPermission: () => Promise<{ supported: boolean; granted: boolean }>;
+      checkNotificationPermission: () => Promise<NotifyPermissionState>;
       setNotificationMode: (mode: string) => Promise<void>;
       onNotificationModeChanged: (
         callback: (mode: string) => void
       ) => (() => void) | undefined;
-      openNotificationSettings: () => Promise<void>;
+      openNotificationSettings: () => Promise<boolean>;
       onNotificationClick: (callback: (messageId: number) => void) => (() => void) | undefined;
       getTheme: () => Promise<boolean>;
       onThemeChanged: (callback: (isDark: boolean) => void) => (() => void) | undefined;

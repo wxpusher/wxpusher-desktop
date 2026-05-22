@@ -13,7 +13,11 @@
     "electron:build": "vite build && electron-builder",
     "electron:build:mac": "vite build && electron-builder --mac",
     "electron:build:win": "vite build && electron-builder --win",
-    "electron:build:linux": "vite build && electron-builder --linux"
+    "electron:build:linux": "vite build && electron-builder --linux",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "optionalDependencies": {
+    "node-mac-permissions": "github:codebytere/node-mac-permissions#7bdd039cc5bb0dd9c81540df4340b0c4bdb3be37"
   },
   "dependencies": {
     "react": "^18.3.1",

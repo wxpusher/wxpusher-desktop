@@ -156,7 +156,7 @@ export function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.NOTIFY_OPEN_SETTINGS, () => {
-    NotificationManager.openNotificationSettings();
+    return NotificationManager.openNotificationSettings();
   });
 
   // 主题

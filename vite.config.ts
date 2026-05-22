@@ -14,7 +14,14 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
             rollupOptions: {
-              external: ['electron', 'ws', 'electron-store', 'electron-log', 'electron-updater'],
+              external: [
+                'electron',
+                'ws',
+                'electron-store',
+                'electron-log',
+                'electron-updater',
+                'node-mac-permissions',
+              ],
             },
           },
         },

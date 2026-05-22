@@ -5,6 +5,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
+import type { NotifyPermissionState } from '../../types';
 
 interface DesktopPrefs {
   notificationMode: string;
@@ -33,12 +34,13 @@ function matchEnvChoice(current: string, prod: string, test: string): EnvChoice 
 }
 
 export default function SettingsPage() {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const loginInfo = useAppStore((s) => s.loginInfo);
   const [prefs, setPrefs] = useState<DesktopPrefs | null>(null);
-  const [notifPermission, setNotifPermission] = useState<{ supported: boolean; granted: boolean }>({
+  const [notifPermission, setNotifPermission] = useState<NotifyPermissionState>({
     supported: true,
     granted: true,
+    guide: 'none',
   });
   const [autoLaunch, setAutoLaunch] = useState(false);
   const [dataPath, setDataPath] = useState('');
@@ -114,10 +116,24 @@ export default function SettingsPage() {
       message.warning('当前系统不支持系统通知');
     } else if (result.granted) {
       message.success('系统通知权限已授权，无需重复开启');
+    } else if (result.guide === 'manual') {
+      modal.warning({
+        title: '通知权限未开启',
+        content: '仍未获得系统通知权限，请在系统的「通知」设置中允许 WxPusher 发送通知。',
+        okText: '我知道了',
+      });
     } else {
-      message.warning('仍未获得系统通知权限，请点击「去开启」前往系统设置');
+      modal.confirm({
+        title: '通知权限未开启',
+        content: '仍未获得系统通知权限，桌面提醒将无法弹出。',
+        cancelText: '取消',
+        okText: '去开启',
+        onOk: () => {
+          window.electronAPI.openNotificationSettings();
+        },
+      });
     }
-  }, []);
+  }, [message, modal]);
 
   const [pushChecking, setPushChecking] = useState(false);
   const handleRecheckPush = useCallback(async () => {
@@ -305,12 +321,17 @@ export default function SettingsPage() {
               <span className={`dot ${notifPermission.granted ? 'green' : 'red'}`} />
               <span>{notifPermission.granted ? '已授权' : '未授权'}</span>
             </div>
-            {!notifPermission.granted && (
+            {notifPermission.guide === 'settings' && (
               <button onClick={() => window.electronAPI.openNotificationSettings()}>去开启</button>
             )}
             <button onClick={handleRecheckNotification}>
               重新检查
             </button>
+            {notifPermission.guide === 'manual' && (
+              <span className="hint">
+                请在系统的「通知」设置中允许 WxPusher 发送通知
+              </span>
+            )}
           </div>
         </div>
         <div className="settings-row">
