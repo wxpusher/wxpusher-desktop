@@ -12,6 +12,7 @@ export default function NotificationBanner() {
     supported: true,
     granted: true,
     guide: 'none',
+    canOpenSettings: false,
   });
   const notifyPermissionDismissedAt = useAppStore((s) => s.notifyPermissionDismissedAt);
 

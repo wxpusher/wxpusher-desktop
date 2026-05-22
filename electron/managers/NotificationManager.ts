@@ -18,6 +18,8 @@ export interface NotifyPermissionState {
   supported: boolean;
   granted: boolean;
   guide: 'none' | 'settings' | 'manual';
+  // 当前平台是否能打开系统通知设置页(macOS / Windows 可,Linux 不可)
+  canOpenSettings: boolean;
 }
 
 // 应用标识,与 electron-builder 的 appId 一致;
@@ -70,11 +72,19 @@ class NotificationManagerClass {
     }
   }
 
+  async checkPermission(): Promise<NotifyPermissionState> {
+    const core = await this.detectPermission();
+    return {
+      ...core,
+      canOpenSettings: process.platform === 'darwin' || process.platform === 'win32',
+    };
+  }
+
   // 检测系统通知授权状态。各平台机制不同:
   // - macOS:原生模块查询 UNUserNotificationCenter 授权态;
   // - Windows:读注册表里的全局 + 应用级 toast 开关;
   // - Linux:以通知守护进程是否可用为准(无 per-app 权限概念)。
-  async checkPermission(): Promise<NotifyPermissionState> {
+  private async detectPermission(): Promise<Omit<NotifyPermissionState, 'canOpenSettings'>> {
     const supported = Notification.isSupported();
     if (!supported) return { supported: false, granted: false, guide: 'manual' };
 

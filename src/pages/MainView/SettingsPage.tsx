@@ -41,6 +41,7 @@ export default function SettingsPage() {
     supported: true,
     granted: true,
     guide: 'none',
+    canOpenSettings: false,
   });
   const [autoLaunch, setAutoLaunch] = useState(false);
   const [dataPath, setDataPath] = useState('');
@@ -356,6 +357,11 @@ export default function SettingsPage() {
               <Radio value="silent">静音通知</Radio>
               <Radio value="quiet">不通知提醒</Radio>
             </Radio.Group>
+            {notifPermission.canOpenSettings && (
+              <button onClick={() => window.electronAPI.openNotificationSettings()}>
+                去系统设置
+              </button>
+            )}
           </div>
         </div>
       </div>

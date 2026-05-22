@@ -14,6 +14,8 @@ export interface NotifyPermissionState {
   supported: boolean;
   granted: boolean;
   guide: 'none' | 'settings' | 'manual';
+  // 当前平台是否能打开系统通知设置页(macOS / Windows 可,Linux 不可)
+  canOpenSettings: boolean;
 }
 
 export type UpdatePhase =
