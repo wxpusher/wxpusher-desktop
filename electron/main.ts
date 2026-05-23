@@ -14,6 +14,7 @@ import { registerIpcHandlers } from './ipc/ipcHandlers';
 import { IPC_CHANNELS } from './ipc/ipcChannels';
 import { setupCsp } from './utils/csp';
 import { getResourcePath } from './utils/platform';
+import { APP_ID } from './utils/appId';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -32,8 +33,9 @@ const APP_DISPLAY_NAME = 'WxPusher消息推送平台';
 // Linux WM_CLASS 须为 ASCII，否则 GNOME 顶栏将 UTF-8 误作 Latin-1 显示乱码（Electron #33903）
 const LINUX_WM_CLASS = 'wxpusher-desktop';
 app.setName(process.platform === 'linux' ? LINUX_WM_CLASS : APP_DISPLAY_NAME);
-// Windows 任务栏/通知归属，避免显示为 electron.app.*
-app.setAppUserModelId('com.smjcco.wxpusher.desktop');
+// Windows 任务栏/通知归属，避免显示为 electron.app.*；
+// 这里是"声明身份"的源头，必须用常量 APP_ID 而非 getAppId()
+app.setAppUserModelId(APP_ID);
 
 // 单实例锁
 const gotTheLock = app.requestSingleInstanceLock();

@@ -1,9 +1,9 @@
 import { Notification, NotificationConstructorOptions, shell } from 'electron';
 import { execFileSync } from 'child_process';
-import path from 'path';
 import { WindowManager } from './WindowManager';
 import { PreferencesManager } from './PreferencesManager';
 import { logger } from '../utils/logger';
+import { getAppId } from '../utils/appId';
 
 type NotificationMode = 'normal' | 'silent' | 'quiet';
 
@@ -22,10 +22,6 @@ export interface NotifyPermissionState {
   canOpenSettings: boolean;
 }
 
-// 应用标识,与 electron-builder 的 appId 一致;
-// 同时用作 Windows 通知归属的 AUMID 与 macOS 深链通知设置的 bundleId 回退值。
-const APP_BUNDLE_ID = 'com.smjcco.wxpusher.desktop';
-
 // macOS 通知授权状态查询依赖原生模块,仅在 darwin 懒加载;非 darwin 或加载失败不致命。
 let macPermissions: { getAuthStatus(type: string): string } | null = null;
 if (process.platform === 'darwin') {
@@ -39,7 +35,6 @@ if (process.platform === 'darwin') {
 
 class NotificationManagerClass {
   private notificationMode: NotificationMode = 'normal';
-  private macBundleId: string | null = null;
 
   init(): void {
     this.notificationMode = PreferencesManager.get('notificationMode');
@@ -143,31 +138,12 @@ class NotificationManagerClass {
     if (globalToast === 0) return false;
 
     const appEnabled = this.readRegistryDword(
-      `HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\${APP_BUNDLE_ID}`,
+      `HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\${getAppId()}`,
       'Enabled'
     );
     if (appEnabled === 0) return false;
 
     return true;
-  }
-
-  // 动态获取当前运行 .app 的 bundle id(dev 下为 Electron,打包后为本应用)。
-  // 不能用 process.env.__CFBundleIdentifier——它是启动者(如 Terminal)的 id,不可靠。
-  private getMacBundleId(): string {
-    if (this.macBundleId) return this.macBundleId;
-    try {
-      // process.resourcesPath = .../Xxx.app/Contents/Resources
-      const infoBase = path.join(path.dirname(process.resourcesPath), 'Info');
-      const id = execFileSync('defaults', ['read', infoBase, 'CFBundleIdentifier'], {
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      }).trim();
-      this.macBundleId = id || APP_BUNDLE_ID;
-    } catch (e) {
-      logger.warn('读取 macOS bundle id 失败,回退默认值:', e);
-      this.macBundleId = APP_BUNDLE_ID;
-    }
-    return this.macBundleId;
   }
 
   // 打开系统通知设置页。返回是否存在可用的打开方式(Linux 无统一入口)。
@@ -182,7 +158,7 @@ class NotificationManagerClass {
             ? 'x-apple.systempreferences:com.apple.Notifications-Settings.extension'
             : 'x-apple.systempreferences:com.apple.preference.notifications';
         // 追加 ?id=<bundleId> 直接定位到本应用的通知设置项
-        const url = `${base}?id=${this.getMacBundleId()}`;
+        const url = `${base}?id=${getAppId()}`;
         shell.openExternal(url).catch((e) => logger.warn('打开通知设置失败:', e));
         return true;
       }
