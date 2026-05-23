@@ -3,6 +3,7 @@ import { useAppStore } from '../../stores/appStore';
 import MessagePage from './MessagePage';
 import Toolbar from '../components/Toolbar';
 import NotificationBanner from '../components/NotificationBanner';
+import PushCheckBanner from '../components/PushCheckBanner';
 import OnboardingGuide from '../components/OnboardingGuide';
 import UpdateModal from '../components/UpdateModal';
 import './styles.scss';
@@ -106,6 +107,7 @@ export default function MainView() {
     <div className="main-view">
       <Toolbar />
       <NotificationBanner />
+      <PushCheckBanner />
       <div className="main-body">
         <MessagePage />
       </div>

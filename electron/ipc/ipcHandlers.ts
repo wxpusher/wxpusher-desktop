@@ -9,6 +9,7 @@ import { TrayManager } from '../managers/TrayManager';
 import { PreferencesManager } from '../managers/PreferencesManager';
 import { ThemeManager } from '../managers/ThemeManager';
 import { UpdateManager } from '../managers/UpdateManager';
+import { PushCheckManager } from '../managers/PushCheckManager';
 import { getDesktopPlatform, getDeviceName, getAppVersion } from '../utils/platform';
 import { logger } from '../utils/logger';
 
@@ -81,6 +82,7 @@ export function registerIpcHandlers(): void {
     await CredentialManager.clearCredential();
     WsManager.disconnect();
     WsManager.stopPushTokenReportSchedule();
+    PushCheckManager.clear();
     WindowManager.navigateToLogin();
   });
 
@@ -132,8 +134,13 @@ export function registerIpcHandlers(): void {
     return ApiService.getListBanner().catch(() => null);
   });
 
+  // 走 PushCheckManager.run({force:true})：绕过 1h 节流，同时落盘 + 广播到 banner
   ipcMain.handle(IPC_CHANNELS.MSG_CHECK_NO_MSG, async () => {
-    return ApiService.checkNoMsg().catch(() => null);
+    return PushCheckManager.run({ force: true });
+  });
+
+  ipcMain.handle(IPC_CHANNELS.MSG_PUSH_CHECK_GET_LAST, () => {
+    return PushCheckManager.getLast();
   });
 
   // 设备

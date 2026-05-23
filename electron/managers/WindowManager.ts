@@ -1,6 +1,7 @@
 import { BrowserWindow, BrowserView, screen, app } from 'electron';
 import path from 'path';
 import { PreferencesManager } from './PreferencesManager';
+import { PushCheckManager } from './PushCheckManager';
 import { logger } from '../utils/logger';
 import { getResourcePath } from '../utils/platform';
 
@@ -94,6 +95,11 @@ export class WindowManager {
 
     win.on('resize', debouncedSave);
     win.on('move', debouncedSave);
+
+    // 主窗口每次显示触发一次推送检查（1h 节流）：覆盖冷启动、托盘、Dock、第二实例所有路径
+    win.on('show', () => {
+      PushCheckManager.onWindowShown();
+    });
 
     // 关闭窗口:隐藏到后台,程序继续运行收消息;真正退出走托盘菜单
     win.on('close', (e) => {

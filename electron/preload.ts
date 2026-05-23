@@ -179,6 +179,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Banner / CheckReason
   getListBanner: () => ipcRenderer.invoke(IPC_CHANNELS.MSG_LIST_BANNER),
   checkNoMsg: () => ipcRenderer.invoke(IPC_CHANNELS.MSG_CHECK_NO_MSG),
+  getLastPushCheck: () => ipcRenderer.invoke(IPC_CHANNELS.MSG_PUSH_CHECK_GET_LAST),
+  onPushCheckResult: (callback: (result: any) => void) => {
+    const handler = (_: any, result: any) => callback(result);
+    ipcRenderer.on(IPC_CHANNELS.MSG_PUSH_CHECK_RESULT, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.MSG_PUSH_CHECK_RESULT, handler);
+  },
 
   // BrowserView
   showBrowserView: (url: string) => ipcRenderer.invoke(IPC_CHANNELS.WEBVIEW_SHOW, url),

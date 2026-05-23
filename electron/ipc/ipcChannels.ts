@@ -29,6 +29,8 @@ export const IPC_CHANNELS = {
   MSG_DELETE_ALL: 'msg:delete-all',
   MSG_LIST_BANNER: 'msg:list-banner',
   MSG_CHECK_NO_MSG: 'msg:check-no-msg',
+  MSG_PUSH_CHECK_GET_LAST: 'msg:push-check-get-last',
+  MSG_PUSH_CHECK_RESULT: 'msg:push-check-result',
 
   // 设备
   DEVICE_GET_INFO: 'device:get-info',

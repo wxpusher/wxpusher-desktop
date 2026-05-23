@@ -144,6 +144,10 @@ declare global {
       getOpenId: () => Promise<string | null>;
       getListBanner: () => Promise<BannerData | null>;
       checkNoMsg: () => Promise<CheckAppMsgReason | null>;
+      getLastPushCheck: () => Promise<{ lastAt: number; lastResult: CheckAppMsgReason | null }>;
+      onPushCheckResult: (
+        callback: (result: CheckAppMsgReason | null) => void
+      ) => (() => void) | undefined;
       showBrowserView: (url: string) => Promise<void>;
       hideBrowserView: () => Promise<void>;
       minimizeWindow: () => Promise<void>;

@@ -1,4 +1,5 @@
 import Store from 'electron-store';
+import type { CheckAppMsgReason } from '../../src/types';
 
 export interface DesktopPreferences {
   launchAtLogin: boolean;
@@ -14,6 +15,7 @@ export interface DesktopPreferences {
   bannerThrottleAt: number;
   closedBannerId: number | null;
   checkReasonThrottleAt: number;
+  pushCheckLastResult: CheckAppMsgReason | null;
   onboardingCompleted: boolean;
   keymap: Record<string, string>;
   baseUrl: string;
@@ -35,6 +37,7 @@ const defaults: DesktopPreferences = {
   bannerThrottleAt: 0,
   closedBannerId: null,
   checkReasonThrottleAt: 0,
+  pushCheckLastResult: null,
   onboardingCompleted: false,
   keymap: {},
   baseUrl: 'http://wxpusher.test.zjiecode.com',
