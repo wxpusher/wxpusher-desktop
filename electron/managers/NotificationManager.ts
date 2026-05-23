@@ -1,4 +1,4 @@
-import { Notification, NotificationConstructorOptions, shell } from 'electron';
+import { Notification, NotificationConstructorOptions, shell, app } from 'electron';
 import { execFileSync } from 'child_process';
 import { WindowManager } from './WindowManager';
 import { PreferencesManager } from './PreferencesManager';
@@ -94,6 +94,15 @@ class NotificationManagerClass {
         // authorized / provisional / limited 视为已授权;
         // not determined / denied / restricted 均无法编程申请,统一引导到系统设置。
         if (status === 'authorized' || status === 'provisional' || status === 'limited') {
+          return { supported: true, granted: true, guide: 'none' };
+        }
+        // dev 模式下 Electron 的 authorizationStatus 几乎必然卡在 'not determined':
+        // macOS 的「系统设置开关」与 UNUserNotificationCenter.authorizationStatus 是
+        // 两条独立状态,手动开关不会翻转后者;后者只能由 app 调 requestAuthorization 触发,
+        // 而未签名的 dev Electron 这条链路不稳定。把它判为未授权会让开发者被假阴性持续打扰。
+        // denied / restricted 是显式信号,仍按未授权处理。
+        if (!app.isPackaged && status === 'not determined') {
+          logger.info('dev 模式 + notDetermined:视为已授权,跳过引导');
           return { supported: true, granted: true, guide: 'none' };
         }
         return { supported: true, granted: false, guide: 'settings' };
