@@ -4,6 +4,7 @@ import MessagePage from './MessagePage';
 import Toolbar from '../components/Toolbar';
 import NotificationBanner from '../components/NotificationBanner';
 import PushCheckBanner from '../components/PushCheckBanner';
+import AnnouncementBanner from '../components/AnnouncementBanner';
 import OnboardingGuide from '../components/OnboardingGuide';
 import UpdateModal from '../components/UpdateModal';
 import './styles.scss';
@@ -108,6 +109,7 @@ export default function MainView() {
       <Toolbar />
       <NotificationBanner />
       <PushCheckBanner />
+      <AnnouncementBanner />
       <div className="main-body">
         <MessagePage />
       </div>

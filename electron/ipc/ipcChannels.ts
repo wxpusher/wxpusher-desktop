@@ -28,6 +28,8 @@ export const IPC_CHANNELS = {
   MSG_DELETE: 'msg:delete',
   MSG_DELETE_ALL: 'msg:delete-all',
   MSG_LIST_BANNER: 'msg:list-banner',
+  MSG_LIST_BANNER_GET_LAST: 'msg:list-banner-get-last',
+  MSG_LIST_BANNER_RESULT: 'msg:list-banner-result',
   MSG_CHECK_NO_MSG: 'msg:check-no-msg',
   MSG_PUSH_CHECK_GET_LAST: 'msg:push-check-get-last',
   MSG_PUSH_CHECK_RESULT: 'msg:push-check-result',

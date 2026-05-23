@@ -177,7 +177,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getOpenId: () => ipcRenderer.invoke(IPC_CHANNELS.DEVICE_GET_OPENID),
 
   // Banner / CheckReason
-  getListBanner: () => ipcRenderer.invoke(IPC_CHANNELS.MSG_LIST_BANNER),
+  // 公告 banner：与 PushCheck 同构 —— 冷启动取缓存 + 订阅热更新；主进程统一节流。
+  getLastListBanner: () => ipcRenderer.invoke(IPC_CHANNELS.MSG_LIST_BANNER_GET_LAST),
+  onListBannerResult: (callback: (result: any) => void) => {
+    const handler = (_: any, result: any) => callback(result);
+    ipcRenderer.on(IPC_CHANNELS.MSG_LIST_BANNER_RESULT, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.MSG_LIST_BANNER_RESULT, handler);
+  },
   checkNoMsg: () => ipcRenderer.invoke(IPC_CHANNELS.MSG_CHECK_NO_MSG),
   getLastPushCheck: () => ipcRenderer.invoke(IPC_CHANNELS.MSG_PUSH_CHECK_GET_LAST),
   onPushCheckResult: (callback: (result: any) => void) => {

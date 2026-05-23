@@ -1,5 +1,5 @@
 import Store from 'electron-store';
-import type { CheckAppMsgReason } from '../../src/types';
+import type { BannerData, CheckAppMsgReason } from '../../src/types';
 
 export interface DesktopPreferences {
   launchAtLogin: boolean;
@@ -13,6 +13,7 @@ export interface DesktopPreferences {
   fontScale: number;
   notifyPermissionDismissedAt: number | null;
   bannerThrottleAt: number;
+  bannerLastResult: BannerData | null;
   closedBannerId: number | null;
   checkReasonThrottleAt: number;
   pushCheckLastResult: CheckAppMsgReason | null;
@@ -35,6 +36,7 @@ const defaults: DesktopPreferences = {
   fontScale: 1.0,
   notifyPermissionDismissedAt: null,
   bannerThrottleAt: 0,
+  bannerLastResult: null,
   closedBannerId: null,
   checkReasonThrottleAt: 0,
   pushCheckLastResult: null,

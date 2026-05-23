@@ -142,7 +142,10 @@ declare global {
       getDataPath: () => Promise<string>;
       getUserDeviceInfo: () => Promise<UserDeviceInfo | null>;
       getOpenId: () => Promise<string | null>;
-      getListBanner: () => Promise<BannerData | null>;
+      getLastListBanner: () => Promise<{ lastAt: number; lastResult: BannerData | null }>;
+      onListBannerResult: (
+        callback: (result: BannerData | null) => void
+      ) => (() => void) | undefined;
       checkNoMsg: () => Promise<CheckAppMsgReason | null>;
       getLastPushCheck: () => Promise<{ lastAt: number; lastResult: CheckAppMsgReason | null }>;
       onPushCheckResult: (
