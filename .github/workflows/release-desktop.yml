@@ -1,0 +1,231 @@
+name: Release Desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_mac:
+        description: '构建 macOS（dmg + zip + latest-mac.yml，含签名+公证）'
+        type: boolean
+        default: true
+      build_win:
+        description: '构建 Windows（nsis + portable + latest.yml，未签名）'
+        type: boolean
+        default: true
+      build_linux:
+        description: '构建 Linux（AppImage + deb + rpm + latest-linux.yml）'
+        type: boolean
+        default: true
+      create_release:
+        description: '是否创建 GitHub Release Draft'
+        type: boolean
+        default: false
+      release_notes:
+        description: '发布说明 / Changelog（可选，作为 Release body 注入）'
+        type: string
+        default: ''
+
+concurrency:
+  group: release-desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare release metadata
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      release_tag: ${{ steps.meta.outputs.release_tag }}
+      release_name: ${{ steps.meta.outputs.release_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read version & compute release metadata
+        id: meta
+        run: |
+          VERSION=$(jq -r .version package.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "release_tag=desktop-v${VERSION}-${{ github.run_number }}" >> $GITHUB_OUTPUT
+          echo "release_name=WxPusher Desktop v${VERSION}" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+          echo "Tag: desktop-v${VERSION}-${{ github.run_number }}"
+
+  build-mac:
+    name: Build macOS (arm64 + x64, signed + notarized)
+    if: ${{ inputs.build_mac }}
+    needs: prepare
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Import Developer ID certificate into temporary keychain
+        env:
+          MAC_CERTIFICATE_BASE64: ${{ secrets.MAC_CERTIFICATE_BASE64 }}
+          MAC_CERTIFICATE_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          CERT_PATH=$RUNNER_TEMP/cert.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/desktop-signing.keychain-db
+          echo -n "$MAC_CERTIFICATE_BASE64" | base64 --decode > "$CERT_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychain -d user | tr -d '"')
+          security default-keychain -s "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$MAC_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          echo "可用签名身份："
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+      - name: Prepare App Store Connect API Key for notarization
+        env:
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        run: |
+          set -euo pipefail
+          mkdir -p $RUNNER_TEMP/notary
+          KEY_PATH="$RUNNER_TEMP/notary/AuthKey_${APPLE_API_KEY_ID}.p8"
+          echo -n "$APPLE_API_KEY_BASE64" | base64 --decode > "$KEY_PATH"
+          echo "APPLE_API_KEY_PATH=$KEY_PATH" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build & sign & notarize via electron-builder
+        env:
+          CSC_KEYCHAIN: ${{ runner.temp }}/desktop-signing.keychain-db
+          APPLE_API_KEY: ${{ env.APPLE_API_KEY_PATH }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npx electron-builder --mac --arm64 --x64 --publish never
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-mac
+          path: |
+            release/*.dmg
+            release/*.dmg.blockmap
+            release/*.zip
+            release/*.zip.blockmap
+            release/latest-mac.yml
+          if-no-files-found: error
+
+      - name: Clean up signing keychain
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/desktop-signing.keychain-db" || true
+          rm -f "$RUNNER_TEMP/cert.p12" "$APPLE_API_KEY_PATH" || true
+
+  build-win:
+    name: Build Windows (unsigned)
+    if: ${{ inputs.build_win }}
+    needs: prepare
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build via electron-builder
+        run: npx electron-builder --win --publish never
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-win
+          path: |
+            release/*.exe
+            release/*.exe.blockmap
+            release/latest.yml
+          if-no-files-found: error
+
+  build-linux:
+    name: Build Linux (AppImage + deb + rpm)
+    if: ${{ inputs.build_linux }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install fpm/rpm system tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm fakeroot
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build via electron-builder
+        run: npx electron-builder --linux --publish never
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux
+          path: |
+            release/*.AppImage
+            release/*.AppImage.blockmap
+            release/*.deb
+            release/*.rpm
+            release/latest-linux.yml
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release Draft
+    if: ${{ always() && inputs.create_release }}
+    needs: [prepare, build-mac, build-win, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: List collected files
+        run: ls -lh artifacts/
+
+      - name: Create Release Draft
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.release_tag }}
+          name: ${{ needs.prepare.outputs.release_name }}
+          body: |
+            ## WxPusher Desktop v${{ needs.prepare.outputs.version }}
+
+            ${{ inputs.release_notes || '新版本发布' }}
+
+            ---
+            构建信息
+            - 分支: `${{ github.ref_name }}`
+            - Commit: `${{ github.sha }}`
+            - Run ID: `${{ github.run_id }}`
+            - 包含平台: Mac=${{ inputs.build_mac }} / Win=${{ inputs.build_win }} / Linux=${{ inputs.build_linux }}
+          draft: true
+          prerelease: false
+          files: artifacts/**
+          generate_release_notes: true

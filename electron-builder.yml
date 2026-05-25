@@ -22,10 +22,12 @@ mac:
   icon: resources/icon.icns
   hardenedRuntime: true
   gatekeeperAssess: false
+  entitlements: mac/entitlements.mac.plist
+  entitlementsInherit: mac/entitlements.mac.plist
   target:
     - dmg
     - zip
-  notarize: false
+  notarize: true
 
 win:
   productName: WxPusher消息推送平台
