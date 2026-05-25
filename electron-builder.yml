@@ -24,6 +24,10 @@ mac:
   gatekeeperAssess: false
   entitlements: mac/entitlements.mac.plist
   entitlementsInherit: mac/entitlements.mac.plist
+  # 强制 electron-builder 用 Developer ID Application 证书签所有二进制（含 Helper），
+  # 否则可能给子 Helper ad-hoc 签名，导致公证被苹果拒
+  identity: Developer ID Application
+  forceCodeSigning: true
   target:
     - dmg
     - zip

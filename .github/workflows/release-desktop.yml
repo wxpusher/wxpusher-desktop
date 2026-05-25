@@ -80,8 +80,14 @@ jobs:
           security default-keychain -s "$KEYCHAIN_PATH"
           security import "$CERT_PATH" -P "$MAC_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security -k "$KEYCHAIN_PATH"
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          echo "可用签名身份："
+          echo "=== 可用签名身份 ==="
           security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+          # fail-fast: 必须存在 Developer ID Application 证书，否则提前退出，避免后面公证才发现证书类型不对
+          if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -q "Developer ID Application"; then
+            echo "::error::Keychain 中找不到 'Developer ID Application' 证书。请确认 MAC_CERTIFICATE_BASE64 secret 是从 Apple Developer Portal 申请的 'Developer ID Application' 证书（不是 Apple Development / Apple Distribution / Mac Installer 之类的其它类型）。"
+            exit 1
+          fi
+          echo "✅ Developer ID Application 证书已就绪"
 
       - name: Prepare App Store Connect API Key for notarization
         env:
