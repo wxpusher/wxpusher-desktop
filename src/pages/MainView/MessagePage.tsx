@@ -8,7 +8,6 @@ import type { MessageItem } from '../../types';
 
 export default function MessagePage() {
   const messages = useAppStore((s) => s.messages);
-  const loginInfo = useAppStore((s) => s.loginInfo);
   const [selectedMessage, setSelectedMessage] = useState<MessageItem | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -162,10 +161,14 @@ export default function MessagePage() {
           onRefresh={() => refreshMessages(1)}
         />
         <div className="message-banner">
-          <div className="user-avatar">
-            {loginInfo?.nickName?.[0] || loginInfo?.uid?.[0] || 'U'}
-          </div>
-          <div className="user-name">{loginInfo?.nickName || loginInfo?.uid || '用户'}</div>
+          <button
+            className="banner-brand"
+            onClick={() => window.electronAPI.openExternal('https://wxpusher.zjiecode.com')}
+            title="访问 WxPusher 官网"
+            aria-label="WxPusher 官网"
+          >
+            WxPusher消息推送平台
+          </button>
           <button
             className="banner-settings-btn"
             onClick={openSettings}
@@ -173,6 +176,34 @@ export default function MessagePage() {
             aria-label="设置"
           >
             <Settings size={18} />
+          </button>
+          <button
+            className="banner-settings-btn"
+            onClick={() =>
+              window.electronAPI.openExternal('https://wxpusher.zjiecode.com/docs/#/')
+            }
+            title="接入文档"
+            aria-label="接入文档"
+          >
+            {/* 自定义 SVG：打开的书 + 代码尖括号 < >，代表「开发者接入文档」 */}
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              {/* 书本外形（左右两页 + 中缝） */}
+              <path d="M3 5.5A1.5 1.5 0 0 1 4.5 4H10a2 2 0 0 1 2 2v14a1.5 1.5 0 0 0-1.5-1.5H3V5.5Z" />
+              <path d="M21 5.5A1.5 1.5 0 0 0 19.5 4H14a2 2 0 0 0-2 2v14a1.5 1.5 0 0 1 1.5-1.5H21V5.5Z" />
+              {/* 中间的代码尖括号 < / > —— 表达「接入 / 开发文档」 */}
+              <path d="M9.5 10.5 8 12l1.5 1.5" />
+              <path d="M14.5 10.5 16 12l-1.5 1.5" />
+            </svg>
           </button>
         </div>
       </div>

@@ -402,6 +402,33 @@ button {
   flex-shrink: 0;
 }
 
+.banner-brand {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 var(--spacing-sm);
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    color: var(--color-primary);
+    background: var(--color-bg-hover);
+  }
+}
+
 .banner-settings-btn {
   width: 32px;
   height: 32px;
@@ -420,30 +447,6 @@ button {
     background: var(--color-bg-hover);
     color: var(--color-text-primary);
   }
-}
-
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: var(--font-size-sm);
-  flex-shrink: 0;
-}
-
-.user-name {
-  flex: 1;
-  font-size: var(--font-size-base);
-  font-weight: 500;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* ========================================
