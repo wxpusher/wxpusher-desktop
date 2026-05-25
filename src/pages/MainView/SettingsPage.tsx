@@ -328,6 +328,11 @@ export default function SettingsPage() {
             <button onClick={handleRecheckNotification}>
               重新检查
             </button>
+            {notifPermission.canOpenSettings && (
+              <button onClick={() => window.electronAPI.openNotificationSettings()}>
+                去系统设置
+              </button>
+            )}
             {notifPermission.guide === 'manual' && (
               <span className="hint">
                 请在系统的「通知」设置中允许 WxPusher 发送通知
