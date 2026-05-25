@@ -1,6 +1,7 @@
 appId: com.smjcco.wxpusher.desktop
-# 全局 productName 使用 ASCII，避免 Linux WM_CLASS 中文乱码；mac/win 见平台覆盖
-productName: WxPusher
+# 用户可见名（mac Bundle/win 安装器/Linux 菜单都用它）；electron-builder v25 起 mac/win 已不再支持平台级 productName
+# Linux WM_CLASS / 二进制名通过 linux.executableName 与 linux.desktop.StartupWMClass 单独强制 ASCII
+productName: WxPusher消息推送平台
 copyright: Copyright © 2026 四川思明今创科技有限公司
 
 directories:
@@ -17,7 +18,6 @@ extraResources:
     to: resources/
 
 mac:
-  productName: WxPusher消息推送平台
   category: public.app-category.productivity
   icon: resources/icon.icns
   hardenedRuntime: true
@@ -30,7 +30,6 @@ mac:
   notarize: true
 
 win:
-  productName: WxPusher消息推送平台
   icon: resources/icon.ico
   target:
     - nsis
@@ -44,6 +43,8 @@ nsis:
 
 linux:
   executableName: wxpusher-desktop
+  # 强制 Linux 包文件名为 ASCII（顶层 productName 已改中文，否则 AppImage/deb/rpm 文件名会带中文）
+  artifactName: 'wxpusher-desktop-${version}-${arch}.${ext}'
   icon: resources/icon.png
   category: Utility
   target:
