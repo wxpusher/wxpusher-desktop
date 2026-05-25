@@ -19,6 +19,10 @@ on:
         description: '是否创建 GitHub Release Draft'
         type: boolean
         default: false
+      upload_oss:
+        description: '是否上传到阿里云 OSS（按 ${version}/ 路径归档，供 electron-updater 拉取）'
+        type: boolean
+        default: false
       release_notes:
         description: '发布说明 / Changelog（可选，作为 Release body 注入）'
         type: string
@@ -244,3 +248,43 @@ jobs:
           prerelease: false
           files: artifacts/**
           generate_release_notes: true
+
+  upload-oss:
+    name: Upload artifacts to Aliyun OSS
+    if: ${{ always() && inputs.upload_oss }}
+    needs: [prepare, build-mac, build-win, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: List collected files
+        run: ls -lh artifacts/
+
+      - name: Install ossutil
+        run: |
+          set -euo pipefail
+          curl -sSL -o /usr/local/bin/ossutil https://gosspublic.alicdn.com/ossutil/1.7.18/ossutil64
+          chmod +x /usr/local/bin/ossutil
+          ossutil version
+
+      - name: Upload to OSS under ${version}/ prefix
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+          OSS_ENDPOINT: ${{ secrets.OSS_ENDPOINT }}
+          OSS_BUCKET: ${{ secrets.OSS_BUCKET }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          DEST="oss://${OSS_BUCKET}/${VERSION}/"
+          echo "上传目标：$DEST"
+          # -r 递归 / -f 覆盖不提示 / --update 跳过未变更文件（重跑同 version 时安全）
+          ossutil cp -r -f --update artifacts/ "$DEST" \
+            -i "$OSS_ACCESS_KEY_ID" -k "$OSS_ACCESS_KEY_SECRET" -e "$OSS_ENDPOINT"
+          echo "=== 上传完成，OSS 目录内容 ==="
+          ossutil ls "$DEST" \
+            -i "$OSS_ACCESS_KEY_ID" -k "$OSS_ACCESS_KEY_SECRET" -e "$OSS_ENDPOINT"
