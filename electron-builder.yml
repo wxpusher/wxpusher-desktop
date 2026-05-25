@@ -42,6 +42,8 @@ nsis:
   deleteAppDataOnUninstall: false
 
 linux:
+  # deb/rpm 必填的 maintainer 字段（package.json author 是字符串而非对象，缺 email）
+  maintainer: 四川思明今创科技有限公司 <kefu@wxpusher.com>
   executableName: wxpusher-desktop
   # 强制 Linux 包文件名为 ASCII（顶层 productName 已改中文，否则 AppImage/deb/rpm 文件名会带中文）
   artifactName: 'wxpusher-desktop-${version}-${arch}.${ext}'
