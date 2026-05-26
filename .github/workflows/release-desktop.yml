@@ -269,7 +269,7 @@ jobs:
           set -euo pipefail
           curl -sSL -o /usr/local/bin/ossutil https://gosspublic.alicdn.com/ossutil/1.7.18/ossutil64
           chmod +x /usr/local/bin/ossutil
-          ossutil version
+          ls -lh /usr/local/bin/ossutil
 
       - name: Upload to OSS under ${version}/ prefix
         env:
