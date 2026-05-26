@@ -1,5 +1,13 @@
+import { app } from 'electron';
 import Store from 'electron-store';
 import type { BannerData, CheckAppMsgReason } from '../../src/types';
+
+const PROD_BASE_URL = 'https://wxpusher.zjiecode.com';
+const PROD_WS_URL = 'wss://wxpusher.zjiecode.com';
+const PROD_APP_FE_URL = 'https://wxpusher.zjiecode.com';
+const TEST_BASE_URL = 'http://wxpusher.test.zjiecode.com';
+const TEST_WS_URL = 'ws://wxpusher.test.zjiecode.com';
+const TEST_APP_FE_URL = 'http://wxpusher.test.zjiecode.com';
 
 export interface DesktopPreferences {
   launchAtLogin: boolean;
@@ -42,9 +50,10 @@ const defaults: DesktopPreferences = {
   pushCheckLastResult: null,
   onboardingCompleted: false,
   keymap: {},
-  baseUrl: 'http://wxpusher.test.zjiecode.com',
-  wsUrl: 'ws://wxpusher.test.zjiecode.com',
-  appFeUrl: 'http://wxpusher.test.zjiecode.com',
+  // 打包后(production)默认连生产后端；dev 模式默认连测试后端，方便本地联调。
+  baseUrl: app.isPackaged ? PROD_BASE_URL : TEST_BASE_URL,
+  wsUrl: app.isPackaged ? PROD_WS_URL : TEST_WS_URL,
+  appFeUrl: app.isPackaged ? PROD_APP_FE_URL : TEST_APP_FE_URL,
 };
 
 const store = new Store<DesktopPreferences>({ defaults });
@@ -68,6 +77,20 @@ if (legacyMode && !['normal', 'silent', 'quiet'].includes(legacyMode)) {
 // 一次性清理:closeBehavior 开关已移除,关窗统一隐藏到后台。
 if (store.has('closeBehavior' as any)) {
   store.delete('closeBehavior' as any);
+}
+
+// 迁移:旧版本打包产物默认就是测试地址且没有切换 UI,升级到新版后强制切到生产。
+// dev 模式不动,允许开发者继续使用测试或自定义地址。
+if (app.isPackaged) {
+  if (store.get('baseUrl') === TEST_BASE_URL) {
+    store.set('baseUrl', PROD_BASE_URL);
+  }
+  if (store.get('wsUrl') === TEST_WS_URL) {
+    store.set('wsUrl', PROD_WS_URL);
+  }
+  if (store.get('appFeUrl') === TEST_APP_FE_URL) {
+    store.set('appFeUrl', PROD_APP_FE_URL);
+  }
 }
 
 export class PreferencesManager {
