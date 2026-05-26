@@ -28,6 +28,8 @@ mac:
   # 否则可能给子 Helper ad-hoc 签名，导致公证被苹果拒
   identity: Developer ID Application
   forceCodeSigning: true
+  # 下载文件名用 ASCII，避免中文+空格 URL 编码在 CDN 上的兼容问题；应用显示名仍走顶层 productName 的中文
+  artifactName: 'wxpusher-desktop-${version}-${arch}.${ext}'
   target:
     - dmg
     - zip
@@ -44,6 +46,11 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   deleteAppDataOnUninstall: false
+  artifactName: 'wxpusher-desktop-Setup-${version}-${arch}.${ext}'
+
+portable:
+  # 与 NSIS 都是 .exe，必须用 Portable 关键词避免文件名冲突
+  artifactName: 'wxpusher-desktop-Portable-${version}-${arch}.${ext}'
 
 linux:
   # deb/rpm 必填的 maintainer 字段（package.json author 是字符串而非对象，缺 email）
