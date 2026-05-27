@@ -233,6 +233,10 @@ export function registerIpcHandlers(): void {
     }
   });
 
+  ipcMain.handle('window:is-maximized', () => {
+    return !!WindowManager.getMainWindow()?.isMaximized();
+  });
+
   ipcMain.handle(IPC_CHANNELS.WINDOW_CLOSE, () => {
     WindowManager.getMainWindow()?.close();
   });

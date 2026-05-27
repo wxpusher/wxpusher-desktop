@@ -155,6 +155,8 @@ declare global {
       hideBrowserView: () => Promise<void>;
       minimizeWindow: () => Promise<void>;
       maximizeWindow: () => Promise<void>;
+      isMaximized: () => Promise<boolean>;
+      onMaximizedChange: (callback: (maximized: boolean) => void) => (() => void) | undefined;
       closeWindow: () => Promise<void>;
 
       // 环境配置（开发者选项）

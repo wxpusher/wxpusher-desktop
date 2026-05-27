@@ -72,6 +72,25 @@ export default function MessagePage() {
     refreshMessages(2); // SceneAutoRefresh
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    window.electronAPI
+      .getPref('listPaneWidth')
+      .then((storedWidth) => {
+        if (!mounted) return;
+        const width = Number(storedWidth);
+        if (Number.isFinite(width)) {
+          setListPaneWidth(Math.max(280, Math.min(600, width)));
+        }
+      })
+      .catch(() => {
+        // ignore invalid local preference read
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // 监听刷新事件
   useEffect(() => {
     const handleRefresh = () => refreshMessages(1);
@@ -128,6 +147,12 @@ export default function MessagePage() {
     document.body.style.cursor = 'col-resize';
     document.body.classList.add('resizing');
   }, []);
+
+  useEffect(() => {
+    window.electronAPI.setPref('listPaneWidth', listPaneWidth).catch(() => {
+      // ignore persistence failure
+    });
+  }, [listPaneWidth]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {

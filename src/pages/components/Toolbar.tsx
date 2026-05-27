@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type MouseEvent } from 'react';
 import { useAppStore } from '../../stores/appStore';
 import { WS_STATUS } from '../../../electron/ipc/wsStatus';
 import { WS_STATUS_DISPLAY } from '../../utils/wsStatusDisplay';
+import WindowControls from './WindowControls';
 
 export default function Toolbar() {
   const wsStatus = useAppStore((s) => s.wsStatus);
@@ -41,9 +42,15 @@ export default function Toolbar() {
   }
 
   const version = updateStatus?.currentVersion || appVersion;
+  const handleToolbarDoubleClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (platform === 'darwin') return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.toolbar-right')) return;
+    window.electronAPI.maximizeWindow();
+  };
 
   return (
-    <div className="toolbar">
+    <div className="toolbar" onDoubleClick={handleToolbarDoubleClick}>
       <div className="toolbar-left">
         {platform === 'darwin' && <div className="traffic-lights-spacer" />}
       </div>
@@ -65,6 +72,7 @@ export default function Toolbar() {
           <span className={`dot ${d.tone}`} />
           <span>{d.text}</span>
         </div>
+        <WindowControls platform={platform} />
       </div>
     </div>
   );

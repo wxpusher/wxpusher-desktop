@@ -1,22 +1,26 @@
-import { BrowserWindow, BrowserView, screen, app, nativeTheme } from 'electron';
+import { BrowserWindow, BrowserView, screen, app } from 'electron';
 import path from 'path';
 import { PreferencesManager } from './PreferencesManager';
 import { PushCheckManager } from './PushCheckManager';
 import { AnnouncementBannerManager } from './AnnouncementBannerManager';
 import { logger } from '../utils/logger';
 import { getResourcePath } from '../utils/platform';
-const WIN_TITLEBAR_HEIGHT = 36;
-
-function getTitleBarOverlay(isDark: boolean): Electron.TitleBarOverlay {
-  return isDark
-    ? { color: '#1E1E1E', symbolColor: '#E8E8E8', height: WIN_TITLEBAR_HEIGHT }
-    : { color: '#ffffff', symbolColor: '#1a1a1a', height: WIN_TITLEBAR_HEIGHT };
-}
+import { IPC_CHANNELS } from '../ipc/ipcChannels';
 
 export class WindowManager {
   private static mainWindow: BrowserWindow | null = null;
   private static detailWindows: Map<number, BrowserWindow> = new Map();
   private static currentBrowserView: BrowserView | null = null;
+
+  static applyTitleBarTheme(isDark: boolean): void {
+    const win = this.mainWindow;
+    if (!win || win.isDestroyed() || process.platform === 'darwin') return;
+    try {
+      win.setBackgroundColor(isDark ? '#1e1e1e' : '#ffffff');
+    } catch {
+      // ignore unsupported platform/runtime behavior
+    }
+  }
 
   static createMainWindow(): BrowserWindow {
     const prefs = PreferencesManager.getAll();
@@ -45,9 +49,10 @@ export class WindowManager {
         : process.platform === 'win32'
           ? {
               titleBarStyle: 'hidden',
-              titleBarOverlay: getTitleBarOverlay(nativeTheme.shouldUseDarkColors),
             }
-          : {};
+          : {
+              frame: false,
+            };
 
     const win = new BrowserWindow({
       width: bounds?.width || 1200,
@@ -99,6 +104,17 @@ export class WindowManager {
 
     win.on('resize', debouncedSave);
     win.on('move', debouncedSave);
+    const syncMaximizedState = () => {
+      if (!win.isDestroyed()) {
+        const channel = 'window:maximized-change';
+        const maximized = win.isMaximized();
+        win.webContents.send(channel, maximized);
+      }
+    };
+    win.on('maximize', syncMaximizedState);
+    win.on('unmaximize', syncMaximizedState);
+    win.on('enter-full-screen', syncMaximizedState);
+    win.on('leave-full-screen', syncMaximizedState);
 
     // 主窗口每次显示触发推送检查 + 公告拉取（各自 1h 节流）：覆盖冷启动、托盘、Dock、第二实例所有路径
     win.on('show', () => {
@@ -126,14 +142,6 @@ export class WindowManager {
 
   static getMainWindow(): BrowserWindow | null {
     return this.mainWindow;
-  }
-
-  /** Windows：标题栏颜色跟随系统明暗主题 */
-  static applyTitleBarTheme(isDark: boolean): void {
-    if (process.platform !== 'win32') return;
-    const win = this.mainWindow;
-    if (!win || win.isDestroyed()) return;
-    win.setTitleBarOverlay(getTitleBarOverlay(isDark));
   }
 
   static showMainWindow(): void {
@@ -170,7 +178,7 @@ export class WindowManager {
 
     if (this.currentBrowserView) {
       this.mainWindow.removeBrowserView(this.currentBrowserView);
-      this.currentBrowserView.webContents.destroy();
+      (this.currentBrowserView.webContents as any).destroy?.();
     }
 
     const view = new BrowserView({
@@ -199,7 +207,7 @@ export class WindowManager {
   static hideBrowserView(): void {
     if (this.mainWindow && this.currentBrowserView) {
       this.mainWindow.removeBrowserView(this.currentBrowserView);
-      this.currentBrowserView.webContents.destroy();
+      (this.currentBrowserView.webContents as any).destroy?.();
       this.currentBrowserView = null;
     }
   }

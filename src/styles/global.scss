@@ -14,6 +14,11 @@ body,
   overflow: hidden;
 }
 
+#root > .ant-app {
+  width: 100%;
+  height: 100%;
+}
+
 body {
   font-family: var(--font-family);
   font-size: var(--font-size-base);
@@ -176,7 +181,7 @@ button {
  * ======================================== */
 .main-view {
   width: 100%;
-  height: 100vh;
+  height: 100%;
   background: var(--color-bg-page);
   display: flex;
   flex-direction: column;
@@ -187,6 +192,8 @@ button {
   flex: 1;
   display: flex;
   overflow: hidden;
+  min-width: 0;
+  min-height: 0;
 }
 
 .main-content {
@@ -224,6 +231,63 @@ button {
 
 .traffic-lights-spacer {
   width: 70px;
+}
+
+.window-controls {
+  display: flex;
+  align-items: stretch;
+  height: 36px;
+  -webkit-app-region: no-drag;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.toolbar .window-controls {
+  margin-left: var(--spacing-sm);
+  margin-right: calc(var(--spacing-base) * -1);
+}
+
+.window-control-btn {
+  width: 46px;
+  height: 36px;
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  transition:
+    background var(--duration-fast) var(--easing-standard),
+    color var(--duration-fast) var(--easing-standard);
+
+  &:hover {
+    color: var(--color-text-primary);
+    background: var(--color-bg-hover);
+  }
+
+  &.close:hover {
+    color: var(--color-on-primary);
+    background: var(--color-error);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-radius: 0;
+    box-shadow: inset 0 0 0 2px var(--color-focus-ring);
+  }
+}
+
+.window-control-icon {
+  width: 10px;
+  height: 10px;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+
+  path {
+    vector-effect: non-scaling-stroke;
+  }
 }
 
 .ws-status {
@@ -586,15 +650,19 @@ button {
   flex: 1;
   display: flex;
   overflow: hidden;
+  min-width: 0;
+  min-height: 0;
 }
 
 .list-pane {
   border-right: 1px solid var(--color-divider);
   display: flex;
   flex-direction: column;
+  height: 100%;
   flex-shrink: 0;
   background: var(--color-bg-container);
   overflow: hidden;
+  min-height: 0;
 }
 
 .resize-handle {
@@ -623,7 +691,11 @@ button {
 
 .detail-pane {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+  min-width: 0;
+  min-height: 0;
 }
 
 /* ========================================
@@ -631,12 +703,15 @@ button {
  * ======================================== */
 .message-list-container {
   flex: 1;
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 
   .message-list-scroll {
     flex: 1;
+    height: 100%;
     min-height: 0;
   }
 
@@ -935,10 +1010,13 @@ button {
  * MESSAGE DETAIL
  * ======================================== */
 .detail-container {
+  flex: 1;
   height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 0;
+  min-height: 0;
   /* 消息详情：恢复文本可选中/复制 */
   user-select: text;
   -webkit-user-select: text;
@@ -1002,7 +1080,10 @@ button {
 
 .detail-content-area {
   flex: 1;
+  display: flex;
   overflow: hidden;
+  min-width: 0;
+  min-height: 0;
 }
 
 .detail-content-frame {
@@ -1040,9 +1121,9 @@ button {
 }
 
 .detail-iframe {
+  display: block;
   flex: 1;
   width: 100%;
-  height: 100%;
   border: none;
 }
 

@@ -1,6 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS } from './ipc/ipcChannels';
 
+const WINDOW_IS_MAXIMIZED_CHANNEL = 'window:is-maximized';
+const WINDOW_MAXIMIZED_CHANGE_CHANNEL = 'window:maximized-change';
+
 // 顶层自动注册：无论 renderer 是否订阅，preload 加载时即把
 // online/offline 事件转发到主进程，确保网络变化能被 NetworkManager 立刻感知。
 (() => {
@@ -199,6 +202,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 窗口
   minimizeWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_MINIMIZE),
   maximizeWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_MAXIMIZE),
+  isMaximized: () => ipcRenderer.invoke(WINDOW_IS_MAXIMIZED_CHANNEL),
+  onMaximizedChange: (callback: (maximized: boolean) => void) => {
+    const handler = (_: unknown, maximized: boolean) => callback(maximized);
+    ipcRenderer.on(WINDOW_MAXIMIZED_CHANGE_CHANNEL, handler);
+    return () => ipcRenderer.removeListener(WINDOW_MAXIMIZED_CHANGE_CHANNEL, handler);
+  },
   closeWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_CLOSE),
 
   // 环境配置（开发者选项）
