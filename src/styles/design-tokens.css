@@ -35,6 +35,10 @@
   --color-status-online: #4CAF50;
   --color-status-connecting: #FF9800;
   --color-status-offline: #F44336;
+  --color-on-primary: #FFFFFF;
+  --color-error-hover: #D32F2F;
+  --color-tooltip-bg: rgba(0, 0, 0, 0.82);
+  --color-tooltip-text: #FFFFFF;
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-size-xs: 12px;
   --font-size-sm: 13px;
@@ -108,4 +112,12 @@ html.dark {
   --color-status-online: #66BB6A;
   --color-status-connecting: #FFA726;
   --color-status-offline: #EF5350;
+  --color-on-primary: #FFFFFF;
+  --color-error-hover: #C62828;
+  --color-tooltip-bg: rgba(240, 240, 240, 0.92);
+  --color-tooltip-text: #1F1F1F;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.55);
+  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.65);
 }

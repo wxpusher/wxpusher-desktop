@@ -1,10 +1,17 @@
-import { BrowserWindow, BrowserView, screen, app } from 'electron';
+import { BrowserWindow, BrowserView, screen, app, nativeTheme } from 'electron';
 import path from 'path';
 import { PreferencesManager } from './PreferencesManager';
 import { PushCheckManager } from './PushCheckManager';
 import { AnnouncementBannerManager } from './AnnouncementBannerManager';
 import { logger } from '../utils/logger';
 import { getResourcePath } from '../utils/platform';
+const WIN_TITLEBAR_HEIGHT = 36;
+
+function getTitleBarOverlay(isDark: boolean): Electron.TitleBarOverlay {
+  return isDark
+    ? { color: '#1E1E1E', symbolColor: '#E8E8E8', height: WIN_TITLEBAR_HEIGHT }
+    : { color: '#ffffff', symbolColor: '#1a1a1a', height: WIN_TITLEBAR_HEIGHT };
+}
 
 export class WindowManager {
   private static mainWindow: BrowserWindow | null = null;
@@ -38,11 +45,7 @@ export class WindowManager {
         : process.platform === 'win32'
           ? {
               titleBarStyle: 'hidden',
-              titleBarOverlay: {
-                color: '#ffffff',
-                symbolColor: '#1a1a1a',
-                height: 36,
-              },
+              titleBarOverlay: getTitleBarOverlay(nativeTheme.shouldUseDarkColors),
             }
           : {};
 
@@ -123,6 +126,14 @@ export class WindowManager {
 
   static getMainWindow(): BrowserWindow | null {
     return this.mainWindow;
+  }
+
+  /** Windows：标题栏颜色跟随系统明暗主题 */
+  static applyTitleBarTheme(isDark: boolean): void {
+    if (process.platform !== 'win32') return;
+    const win = this.mainWindow;
+    if (!win || win.isDestroyed()) return;
+    win.setTitleBarOverlay(getTitleBarOverlay(isDark));
   }
 
   static showMainWindow(): void {

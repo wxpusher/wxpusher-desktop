@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Switch, Radio, Input, App, Modal } from 'antd';
+import { Switch, Radio, Input, App } from 'antd';
 import {
   FolderOpen,
   ExternalLink,
@@ -150,22 +150,19 @@ export default function SettingsPage() {
         message.success(result.reason || '推送状态正常');
         return;
       }
-      // 存在异常时弹窗说明，高亮按钮使用主题色
-      Modal.warning({
+      // 存在异常时弹窗说明（须用 App.useApp 的 modal，静态 Modal 不继承暗色主题）
+      modal.warning({
         title: '推送检查',
         content: result.reason || '推送状态异常',
         okText: '我知道了',
-        okButtonProps: {
-          style: { background: 'var(--color-primary)', borderColor: 'var(--color-primary)' },
-        },
       });
     } finally {
       setPushChecking(false);
     }
-  }, []);
+  }, [message, modal]);
 
   const handleLogout = useCallback(() => {
-    Modal.confirm({
+    modal.confirm({
       title: '退出登录',
       content: '退出后将清除本地登录凭证，需要重新扫码登录。确定退出？',
       okText: '确定退出',
@@ -175,7 +172,7 @@ export default function SettingsPage() {
         await window.electronAPI.logout();
       },
     });
-  }, []);
+  }, [modal]);
 
 
   // 检查更新：结果交给全局监听处理（available/强制 → 弹窗），这里只处理"已是最新/失败"
@@ -254,7 +251,7 @@ export default function SettingsPage() {
   }, [baseUrlChoice, wsUrlChoice, appFeUrlChoice, customBaseUrl, customWsUrl, customAppFeUrl]);
 
   const handleResetEnv = useCallback(async () => {
-    Modal.confirm({
+    modal.confirm({
       title: '重置环境配置',
       content: '将恢复为生产环境默认配置，需要重启应用。确定继续？',
       okText: '确定重置',
@@ -269,7 +266,7 @@ export default function SettingsPage() {
         }
       },
     });
-  }, []);
+  }, [message, modal]);
 
   if (!prefs) return null;
 

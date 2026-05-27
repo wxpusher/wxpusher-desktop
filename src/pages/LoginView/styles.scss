@@ -58,7 +58,7 @@
 
 .login-qr-img {
   border-radius: var(--radius-sm);
-  background: #f0f0f0;
+  background: var(--color-bg-elevated);
   &.expired {
     opacity: 0.4;
     filter: grayscale(1) blur(6px);
@@ -256,7 +256,7 @@
 
 .env-btn-save {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   border: none;
   padding: 6px 20px;
   border-radius: var(--radius-sm);

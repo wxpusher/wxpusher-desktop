@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { RefreshCw, Trash2, CheckCheck, X, Search } from 'lucide-react';
-import { Modal, Spin, App } from 'antd';
+import { Spin, App } from 'antd';
 import { useAppStore } from '../../stores/appStore';
 import { getRelativeDateTime } from '../../utils/time';
 import type { MessageItem } from '../../types';
@@ -17,7 +17,7 @@ interface Props {
 const SPIN_MS = 800;
 
 export default function MessageList({ onSelect, selectedMessageId, onLoadMore, onRefresh }: Props) {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const messages = useAppStore((s) => s.messages);
   const selectedIds = useAppStore((s) => s.selectedIds);
   const isLoading = useAppStore((s) => s.isLoading);
@@ -166,7 +166,7 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
   // 删除消息：确认弹窗 → 确认后直接删除
   const handleDelete = useCallback((ids: number[]) => {
     if (ids.length === 0) return;
-    Modal.confirm({
+    modal.confirm({
       title: '删除消息',
       content: `确定删除选中的 ${ids.length} 条消息？删除后不可恢复。`,
       okText: '删除',
@@ -184,7 +184,7 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
         }
       },
     });
-  }, [message]);
+  }, [message, modal]);
 
   // 键盘导航
   useEffect(() => {

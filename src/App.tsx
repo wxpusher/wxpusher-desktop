@@ -66,10 +66,15 @@ function App() {
     };
   }, []);
 
+  // 与设计 token（html.dark）保持一致，驱动自定义 SCSS 的 CSS 变量
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDarkMode);
+  }, [isDarkMode]);
+
   if (!ready) return <div className="app" />;
 
   return (
-    <div className={`app ${isDarkMode ? 'dark' : ''}`}>
+    <div className="app">
       <HashRouter>
         <Routes>
           <Route path="/login" element={<LoginRoute />} />

@@ -5,10 +5,14 @@ export class ThemeManager {
   static init(): void {
     nativeTheme.themeSource = 'system';
 
-    nativeTheme.on('updated', () => {
+    const notifyThemeChange = () => {
       const isDark = nativeTheme.shouldUseDarkColors;
+      WindowManager.applyTitleBarTheme(isDark);
       WindowManager.sendToRenderer('theme:changed', isDark);
-    });
+    };
+
+    nativeTheme.on('updated', notifyThemeChange);
+    notifyThemeChange();
   }
 
   static isDarkMode(): boolean {
