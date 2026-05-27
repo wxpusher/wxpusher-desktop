@@ -127,12 +127,8 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
     [messages, searchResults, searchMode, onSelect]
   );
 
-  // 双击打开新窗口
-  const handleDoubleClick = useCallback((msg: MessageItem) => {
-    if (msg.url) {
-      window.electronAPI.showBrowserView(msg.url);
-    }
-  }, []);
+  // 双击不执行动作，避免误触打开外链
+  const handleDoubleClick = useCallback((_msg: MessageItem) => {}, []);
 
   // 右键菜单
   const handleContextMenu = useCallback(
@@ -450,6 +446,14 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
           >
             复制摘要
           </div>
+          {contextMenu.msg.url && (
+            <div
+              className="context-menu-item"
+              onClick={() => window.electronAPI.openExternal(contextMenu.msg.url)}
+            >
+              在浏览器中打开
+            </div>
+          )}
           {contextMenu.msg.sourceUrl && (
             <>
               <div
@@ -465,7 +469,7 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
                 className="context-menu-item"
                 onClick={() => window.electronAPI.openExternal(contextMenu.msg.sourceUrl)}
               >
-                在浏览器中打开
+                在浏览器中打开原始 URL
               </div>
             </>
           )}
