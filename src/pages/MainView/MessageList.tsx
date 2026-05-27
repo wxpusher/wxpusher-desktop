@@ -348,6 +348,8 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
       {/* 消息列表 */}
       {displayList.length > 0 ? (
         <Virtuoso
+          className="app-scrollbar message-list-scroll"
+          style={{ flex: 1, minHeight: 0 }}
           data={displayList}
           endReached={searchMode ? undefined : onLoadMore}
           overscan={200}

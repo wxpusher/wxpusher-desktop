@@ -73,6 +73,11 @@
   --duration-base: 250ms;
   --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --easing-decelerate: cubic-bezier(0.0, 0, 0.2, 1);
+  --scrollbar-size: 8px;
+  --scrollbar-thumb-hidden: transparent;
+  --scrollbar-thumb: rgba(0, 0, 0, 0.22);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.35);
+  --scrollbar-track: transparent;
 }
 
 html.dark {
@@ -120,4 +125,7 @@ html.dark {
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.55);
   --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.65);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.22);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.35);
+  --scrollbar-track: transparent;
 }

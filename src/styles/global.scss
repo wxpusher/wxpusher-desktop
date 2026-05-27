@@ -19,9 +19,58 @@ body {
   font-size: var(--font-size-base);
   color: var(--color-text-primary);
   background: var(--color-bg-page);
+  color-scheme: light;
   /* 桌面应用：全局禁止选中文本，仅消息详情等处显式恢复 */
   user-select: none;
   -webkit-user-select: none;
+}
+
+html.dark body {
+  color-scheme: dark;
+}
+
+/* 主题化细滚动条：默认隐藏，交互时显示（Linux/Windows 收益最大） */
+@mixin app-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-hidden) var(--scrollbar-track);
+
+  &::-webkit-scrollbar {
+    width: var(--scrollbar-size);
+    height: var(--scrollbar-size);
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb-hidden);
+    border-radius: var(--radius-full);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition: background var(--duration-fast) var(--easing-standard);
+  }
+
+  &:hover,
+  &:focus,
+  &:focus-within,
+  &:active {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+      background-clip: padding-box;
+
+      &:hover {
+        background: var(--scrollbar-thumb-hover);
+        background-clip: padding-box;
+      }
+    }
+  }
+}
+
+.app-scrollbar {
+  @include app-scrollbar;
 }
 
 /* 输入控件恢复可选中/编辑 */
@@ -585,6 +634,15 @@ button {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+
+  .message-list-scroll {
+    flex: 1;
+    min-height: 0;
+  }
+
+  [data-virtuoso-scroller] {
+    @include app-scrollbar;
+  }
 }
 
 .list-header {
@@ -992,6 +1050,7 @@ button {
   flex: 1;
   padding: var(--spacing-xl);
   overflow-y: auto;
+  @include app-scrollbar;
 }
 
 .detail-placeholder {
@@ -1099,7 +1158,9 @@ button {
   flex: 1;
   height: 100%;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   padding: var(--spacing-xl) var(--spacing-2xl);
+  @include app-scrollbar;
 
   h2 {
     font-size: var(--font-size-xl);
