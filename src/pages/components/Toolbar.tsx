@@ -7,7 +7,6 @@ import WindowControls from './WindowControls';
 export default function Toolbar() {
   const wsStatus = useAppStore((s) => s.wsStatus);
   const updateStatus = useAppStore((s) => s.updateStatus);
-  const dismissedVersion = useAppStore((s) => s.updateDismissedVersion);
   const setUpdateModalOpen = useAppStore((s) => s.setUpdateModalOpen);
   const [platform, setPlatform] = useState('');
   const [appVersion, setAppVersion] = useState('');
@@ -19,16 +18,11 @@ export default function Toolbar() {
 
   const d = WS_STATUS_DISPLAY[wsStatus] ?? WS_STATUS_DISPLAY[WS_STATUS.Connecting];
 
-  // 有更新且未被忽略（或强制）→ 显示气泡；否则显示纯文本版本号
+  // 有更新就常驻显示气泡入口（即使点过"稍后"也保留，点它可随时再次打开弹窗并复检）；
+  // 否则显示纯文本版本号。
   const phase = updateStatus?.phase;
-  const forced = !!updateStatus?.forceUpdate;
-  const dismissed =
-    !forced &&
-    updateStatus?.latestVersion != null &&
-    dismissedVersion === updateStatus.latestVersion;
   const hasUpdate =
     !!updateStatus &&
-    !dismissed &&
     (phase === 'available' || phase === 'downloading' || phase === 'downloaded');
 
   let pillText = '';
@@ -60,7 +54,11 @@ export default function Toolbar() {
             type="button"
             className="update-pill"
             data-tip="点击查看新版本"
-            onClick={() => setUpdateModalOpen(true)}
+            onClick={() => {
+              // 主动点击：立即打开弹窗并复检（重查接口 + yml）；已下载完成则短路成"重启更新"
+              setUpdateModalOpen(true);
+              window.electronAPI.checkUpdate();
+            }}
           >
             <span className="dot" />
             <span>{pillText}</span>

@@ -442,6 +442,14 @@ button {
     font-size: var(--font-size-xs);
     color: var(--color-warning);
   }
+
+  .upd-checking {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
 }
 
 .upd-footer {

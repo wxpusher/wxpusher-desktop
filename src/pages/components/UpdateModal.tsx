@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Modal, Progress } from 'antd';
+import { Modal, Progress, Spin } from 'antd';
 import { useAppStore } from '../../stores/appStore';
 
 /**
@@ -11,7 +11,7 @@ export default function UpdateModal() {
   const status = useAppStore((s) => s.updateStatus);
   const open = useAppStore((s) => s.updateModalOpen);
   const setOpen = useAppStore((s) => s.setUpdateModalOpen);
-  const setDismissed = useAppStore((s) => s.setUpdateDismissedVersion);
+  const setDismissed = useAppStore((s) => s.setUpdateDismissed);
 
   if (!status) return null;
 
@@ -20,10 +20,14 @@ export default function UpdateModal() {
   const version = status.latestVersion;
 
   const close = () => setOpen(false);
+  // "稍后"只关弹窗：后台继续下载、退出/重启时自动安装；同一版本"当天"不再自动弹窗打扰，
+  // 但工具栏气泡入口始终保留，点它可随时再次打开弹窗。
   const later = () => {
     if (version) {
-      setDismissed(version);
+      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      setDismissed(version, today);
       window.electronAPI.setPref('updateDismissedVersion', version);
+      window.electronAPI.setPref('updateDismissedDate', today);
     }
     close();
   };
@@ -35,6 +39,12 @@ export default function UpdateModal() {
     footer.push(
       <button key="ok" className="upd-btn primary" onClick={close}>
         我知道了
+      </button>
+    );
+  } else if (phase === 'checking') {
+    footer.push(
+      <button key="checking" className="upd-btn primary" disabled>
+        正在检查更新…
       </button>
     );
   } else if (phase === 'downloaded') {
@@ -72,7 +82,7 @@ export default function UpdateModal() {
   return (
     <Modal
       open={open}
-      title={status.title || '发现新版本'}
+      title={phase === 'checking' ? '检查更新' : status.title || '发现新版本'}
       closable={!forced}
       maskClosable={!forced}
       keyboard={!forced}
@@ -82,6 +92,11 @@ export default function UpdateModal() {
       centered
     >
       <div className="upd-body">
+        {phase === 'checking' && (
+          <div className="upd-checking">
+            <Spin size="small" /> <span>正在检查更新，请稍候…</span>
+          </div>
+        )}
         {version && <div className="upd-version">新版本 v{version}</div>}
         {status.content && <div className="upd-content">{status.content}</div>}
         {phase === 'downloading' && (

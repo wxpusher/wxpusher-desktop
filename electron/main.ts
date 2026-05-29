@@ -118,6 +118,12 @@ app.on('second-instance', () => {
   WindowManager.showMainWindow();
 });
 
+// 安全网：任何真正退出路径都置位 isQuitting，放行 WindowManager 的 close 拦截，
+// 并配合 autoUpdater.autoInstallOnAppQuit 让已下载的更新在退出时静默安装。
+app.on('before-quit', () => {
+  (app as unknown as { isQuitting: boolean }).isQuitting = true;
+});
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();

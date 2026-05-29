@@ -53,9 +53,12 @@ function App() {
     window.electronAPI.getPref('onboardingCompleted').then((v) => {
       if (v) useAppStore.getState().setOnboardingCompleted(v);
     });
-    // 通知横幅的「忽略」仅本次启动有效,不从偏好读取(不持久化)
-    window.electronAPI.getPref('updateDismissedVersion').then((v) => {
-      if (v) useAppStore.getState().setUpdateDismissedVersion(v as string);
+    // 更新弹窗「稍后」的抑制：恢复 版本+日期，仅用于抑制"当天"对该版本的自动弹窗
+    Promise.all([
+      window.electronAPI.getPref('updateDismissedVersion'),
+      window.electronAPI.getPref('updateDismissedDate'),
+    ]).then(([version, date]) => {
+      if (version) useAppStore.getState().setUpdateDismissed(version as string, (date as string) ?? null);
     });
 
     // P0 修复：清理所有 IPC 监听器

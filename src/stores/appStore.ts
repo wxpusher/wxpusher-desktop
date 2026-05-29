@@ -28,6 +28,7 @@ interface AppState {
   updateStatus: UpdateStatus | null;
   updateModalOpen: boolean;
   updateDismissedVersion: string | null;
+  updateDismissedDate: string | null; // YYYY-MM-DD：仅抑制"当天"对该版本的自动弹窗
 
   // 偏好
   onboardingCompleted: boolean;
@@ -55,7 +56,7 @@ interface AppState {
   setNotifyPermissionDismissedAt: (time: number | null) => void;
   setUpdateStatus: (status: UpdateStatus | null) => void;
   setUpdateModalOpen: (open: boolean) => void;
-  setUpdateDismissedVersion: (version: string | null) => void;
+  setUpdateDismissed: (version: string | null, date: string | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -75,6 +76,7 @@ export const useAppStore = create<AppState>((set) => ({
   updateStatus: null,
   updateModalOpen: false,
   updateDismissedVersion: null,
+  updateDismissedDate: null,
   onboardingCompleted: false,
   notifyPermissionDismissedAt: null,
 
@@ -107,5 +109,6 @@ export const useAppStore = create<AppState>((set) => ({
   setNotifyPermissionDismissedAt: (time) => set({ notifyPermissionDismissedAt: time }),
   setUpdateStatus: (status) => set({ updateStatus: status }),
   setUpdateModalOpen: (open) => set({ updateModalOpen: open }),
-  setUpdateDismissedVersion: (version) => set({ updateDismissedVersion: version }),
+  setUpdateDismissed: (version, date) =>
+    set({ updateDismissedVersion: version, updateDismissedDate: date }),
 }));

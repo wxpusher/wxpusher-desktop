@@ -36,17 +36,26 @@ export default function MainView() {
       const store = useAppStore.getState();
       store.setUpdateStatus(status);
       if (status.phase === 'no-update' || status.phase === 'error') return;
-      const forced = !!status.forceUpdate;
-      const dismissed =
-        status.latestVersion != null &&
-        store.updateDismissedVersion === status.latestVersion;
-      // 强制：始终弹（阻塞）。普通：手动触发 或 已下载完成 才自动弹，且未被忽略
-      const shouldOpen =
-        forced ||
-        (!dismissed &&
-          (status.source === 'manual' || status.phase === 'downloaded') &&
-          (status.phase === 'available' || status.phase === 'downloaded'));
-      if (shouldOpen) store.setUpdateModalOpen(true);
+      // 强制：始终弹（阻塞）
+      if (status.forceUpdate) {
+        store.setUpdateModalOpen(true);
+        return;
+      }
+      // 手动复检：checking/available/downloading/downloaded 都即时弹（用户主动发起）
+      if (status.source === 'manual') {
+        store.setUpdateModalOpen(true);
+        return;
+      }
+      // silent 后台：仅下载完成时弹一次"重启更新"提醒；且同一版本"当天"被"稍后"抑制时不弹。
+      // silent 的 checking/available/downloading 保持安静，仅工具栏气泡显示。
+      if (status.phase === 'downloaded') {
+        const today = new Date().toISOString().slice(0, 10);
+        const dismissedToday =
+          status.latestVersion != null &&
+          store.updateDismissedVersion === status.latestVersion &&
+          store.updateDismissedDate === today;
+        if (!dismissedToday) store.setUpdateModalOpen(true);
+      }
     });
 
     // WS 强制更新（msgType 204）：归一到阻塞弹窗
