@@ -1,4 +1,4 @@
-import { safeStorage, app } from 'electron'; // app is used in getMachineId fallback
+import { app } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
@@ -57,22 +57,17 @@ export class CredentialManager {
   static async saveCredential(data: CredentialData): Promise<void> {
     try {
       const filePath = this.getCredentialPath();
-      if (safeStorage.isEncryptionAvailable()) {
-        const encrypted = safeStorage.encryptString(JSON.stringify(data));
-        fs.writeFileSync(filePath, encrypted);
-      } else {
-        // 降级：machine-id + PBKDF2 派生密钥
-        const machineId = await this.getMachineId();
-        const salt = crypto.randomBytes(16);
-        const key = crypto.pbkdf2Sync(machineId, salt, 100000, 32, 'sha512');
-        const iv = crypto.randomBytes(16);
-        const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-        const plaintext = Buffer.from(JSON.stringify(data), 'utf8');
-        const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
-        const authTag = cipher.getAuthTag();
-        const payload = Buffer.concat([salt, iv, authTag, encrypted]);
-        fs.writeFileSync(filePath, payload);
-      }
+      // machine-id + PBKDF2 派生密钥，自定义加密（不使用 safeStorage，避免 mac 上弹出钥匙串安全提醒）
+      const machineId = await this.getMachineId();
+      const salt = crypto.randomBytes(16);
+      const key = crypto.pbkdf2Sync(machineId, salt, 100000, 32, 'sha512');
+      const iv = crypto.randomBytes(16);
+      const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+      const plaintext = Buffer.from(JSON.stringify(data), 'utf8');
+      const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+      const authTag = cipher.getAuthTag();
+      const payload = Buffer.concat([salt, iv, authTag, encrypted]);
+      fs.writeFileSync(filePath, payload);
       logger.info('凭证已保存');
     } catch (e) {
       logger.error('保存凭证失败', e);
@@ -88,13 +83,11 @@ export class CredentialManager {
         return null;
       }
       const encrypted = fs.readFileSync(filePath);
-      if (safeStorage.isEncryptionAvailable()) {
-        const decrypted = safeStorage.decryptString(encrypted);
-        const cred = JSON.parse(decrypted) as CredentialData;
+      const cred = await this.decryptFromFile(encrypted);
+      if (cred) {
         logger.info(`凭证读取成功: deviceToken=${cred.deviceToken?.substring(0, 8)}... pushToken=${cred.pushToken?.substring(0, 8) || 'null'}`);
-        return cred;
       }
-      return await this.decryptFromFile(encrypted);
+      return cred;
     } catch (err) {
       logger.error('凭证读取/解密失败:', err);
       return null;
