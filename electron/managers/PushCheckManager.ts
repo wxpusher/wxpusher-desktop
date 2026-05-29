@@ -29,7 +29,10 @@ export class PushCheckManager {
     this.inflight = (async () => {
       const cred = await CredentialManager.getCredential();
       // 未登录：不落盘、不广播，也不消费 firstRunDone（等登录后再算「首次」）
-      if (!cred?.deviceToken) return null;
+      if (!cred?.deviceToken) {
+        logger.info('PushCheck 跳过：未登录（无 deviceToken），不发起检查');
+        return null;
+      }
       // 进入真实请求阶段就视为已完成首次跑动，后续 show 受节流约束
       this.firstRunDone = true;
       try {

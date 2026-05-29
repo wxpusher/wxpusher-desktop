@@ -79,15 +79,6 @@ export default function SettingsPage() {
     });
   }, []);
 
-  // 焦点回来时重新检查通知权限
-  useEffect(() => {
-    const check = () => {
-      window.electronAPI.checkNotificationPermission().then(setNotifPermission);
-    };
-    window.addEventListener('focus', check);
-    return () => window.removeEventListener('focus', check);
-  }, []);
-
   // 托盘菜单切换「通知行为」时同步设置页选项
   useEffect(() => {
     return window.electronAPI.onNotificationModeChanged((mode) => {
@@ -110,34 +101,12 @@ export default function SettingsPage() {
     message.success('已复制');
   };
 
-  const handleRecheckNotification = useCallback(async () => {
-    const result = await window.electronAPI.checkNotificationPermission();
-    setNotifPermission(result);
-    if (!result.supported) {
-      message.warning('当前系统不支持系统通知');
-    } else if (result.granted) {
-      message.success('系统通知权限已授权，无需重复开启');
-    } else if (result.guide === 'manual') {
-      modal.warning({
-        title: '通知权限未开启',
-        content: '仍未获得系统通知权限，请在系统的「通知」设置中允许 WxPusher 发送通知。',
-        okText: '我知道了',
-      });
-    } else {
-      modal.confirm({
-        title: '通知权限未开启',
-        content: '仍未获得系统通知权限，桌面提醒将无法弹出。',
-        cancelText: '取消',
-        okText: '去开启',
-        onOk: () => {
-          window.electronAPI.openNotificationSettings();
-        },
-      });
-    }
-  }, [message, modal]);
-
   const [pushChecking, setPushChecking] = useState(false);
   const handleRecheckPush = useCallback(async () => {
+    if (!loginInfo) {
+      message.warning('请先登录后再检查推送状态');
+      return;
+    }
     setPushChecking(true);
     try {
       const result = await window.electronAPI.checkNoMsg();
@@ -159,7 +128,7 @@ export default function SettingsPage() {
     } finally {
       setPushChecking(false);
     }
-  }, [message, modal]);
+  }, [loginInfo, message, modal]);
 
   const handleLogout = useCallback(() => {
     modal.confirm({
@@ -315,16 +284,6 @@ export default function SettingsPage() {
         <div className="settings-row">
           <div className="settings-label">系统通知权限</div>
           <div className="settings-value">
-            <div className="status-indicator">
-              <span className={`dot ${notifPermission.granted ? 'green' : 'red'}`} />
-              <span>{notifPermission.granted ? '已授权' : '未授权'}</span>
-            </div>
-            {notifPermission.guide === 'settings' && (
-              <button onClick={() => window.electronAPI.openNotificationSettings()}>去开启</button>
-            )}
-            <button onClick={handleRecheckNotification}>
-              重新检查
-            </button>
             {notifPermission.canOpenSettings && (
               <button onClick={() => window.electronAPI.openNotificationSettings()}>
                 去系统设置
