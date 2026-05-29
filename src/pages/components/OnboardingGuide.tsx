@@ -5,12 +5,11 @@ import { useAppStore } from '../../stores/appStore';
 export default function OnboardingGuide() {
   const onboardingCompleted = useAppStore((s) => s.onboardingCompleted);
   const [show, setShow] = useState(false);
-  const [autoLaunch, setAutoLaunch] = useState(false);
+  const [autoLaunch, setAutoLaunch] = useState(true);
 
   useEffect(() => {
     if (!onboardingCompleted) {
       setShow(true);
-      window.electronAPI.getAutoLaunch().then(setAutoLaunch);
     }
   }, [onboardingCompleted]);
 
@@ -35,7 +34,6 @@ export default function OnboardingGuide() {
             checked={autoLaunch}
             onChange={(checked) => {
               setAutoLaunch(checked);
-              window.electronAPI.setAutoLaunch(checked);
             }}
           />
         </div>
@@ -47,6 +45,9 @@ export default function OnboardingGuide() {
             setShow(false);
             useAppStore.getState().setOnboardingCompleted(true);
             window.electronAPI.setPref('onboardingCompleted', true);
+            if (autoLaunch) {
+              window.electronAPI.setAutoLaunch(true);
+            }
           }}
         >
           开始使用
