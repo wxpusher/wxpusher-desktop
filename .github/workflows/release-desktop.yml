@@ -130,6 +130,7 @@ jobs:
             release/*.zip.blockmap
             release/latest-mac.yml
           if-no-files-found: error
+          retention-days: 3
 
       - name: Clean up signing keychain
         if: always()
@@ -171,6 +172,7 @@ jobs:
             release/*.exe.blockmap
             release/latest.yml
           if-no-files-found: error
+          retention-days: 3
 
   build-linux:
     name: Build Linux (AppImage + deb + rpm)
@@ -210,6 +212,7 @@ jobs:
             release/*.rpm
             release/latest-linux.yml
           if-no-files-found: error
+          retention-days: 3
 
   release:
     name: Create GitHub Release Draft
