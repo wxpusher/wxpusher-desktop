@@ -32,6 +32,18 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// 日志里打印 body 时做长度截断，避免消息列表等大响应撑爆日志文件
+function truncate(value: unknown, max = 2000): string {
+  let str: string;
+  try {
+    str = typeof value === 'string' ? value : JSON.stringify(value);
+  } catch {
+    str = String(value);
+  }
+  if (str == null) return '';
+  return str.length > max ? `${str.slice(0, max)}…(${str.length} chars)` : str;
+}
+
 export class ApiService {
   static async request<T>(options: {
     method: string;
@@ -53,22 +65,39 @@ export class ApiService {
       headers['deviceToken'] = credential.deviceToken;
     }
 
-    const response = await fetch(url, {
-      method: options.method,
-      headers,
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
-
-    const result: ApiResponse<T> = await response.json();
-
-    if (result.code === 1000) return result.data;
-    if (result.code === 1002) {
-      await CredentialManager.clearCredential();
-      WsManager.disconnect();
-      WindowManager.sendToRenderer('auth:expired');
-      throw new ApiError(1002, '认证已过期');
+    const start = Date.now();
+    if (options.body !== undefined) {
+      logger.info(`[API] ${options.method} ${options.path} req=${truncate(options.body)}`);
     }
-    throw new ApiError(result.code, result.msg);
+    try {
+      const response = await fetch(url, {
+        method: options.method,
+        headers,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      });
+
+      const result: ApiResponse<T> = await response.json();
+      const cost = Date.now() - start;
+      logger.info(
+        `[API] ${options.method} ${options.path} http=${response.status} code=${result.code} ${cost}ms resp=${truncate(result)}`
+      );
+
+      if (result.code === 1000) return result.data;
+      if (result.code === 1002) {
+        await CredentialManager.clearCredential();
+        WsManager.disconnect();
+        WindowManager.sendToRenderer('auth:expired');
+        throw new ApiError(1002, '认证已过期');
+      }
+      throw new ApiError(result.code, result.msg);
+    } catch (e: any) {
+      // 业务错误（已记日志/会被上层处理）直接透传，仅记录网络层异常
+      if (!(e instanceof ApiError)) {
+        const cost = Date.now() - start;
+        logger.error(`[API] ${options.method} ${options.path} FAILED ${cost}ms: ${e?.message || e}`);
+      }
+      throw e;
+    }
   }
 
   // 登录相关
@@ -97,7 +126,6 @@ export class ApiService {
     if (params.key) query.set('key', params.key);
     query.set('scene', String(params.scene));
     const path = `/api/need-login/device/message/list-v2?${query}`;
-    logger.info(`getMessageList: ${path}`);
     return this.request({ method: 'GET', path });
   }
 
