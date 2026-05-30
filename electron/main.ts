@@ -11,6 +11,7 @@ import { ApiService } from './managers/ApiService';
 import { NetworkManager } from './managers/NetworkManager';
 import { UpdateManager } from './managers/UpdateManager';
 import { registerIpcHandlers } from './ipc/ipcHandlers';
+import { refreshLinuxAutoLaunch } from './utils/linuxAutoLaunch';
 import { IPC_CHANNELS } from './ipc/ipcChannels';
 import { setupCsp } from './utils/csp';
 import { getResourcePath } from './utils/platform';
@@ -64,6 +65,10 @@ app.whenReady().then(async () => {
 
   // 3. 注册 IPC handlers
   registerIpcHandlers();
+
+  // 3.1 Linux:若已开启开机自启,用当前可执行路径刷新 autostart 文件
+  //     (应用更新或 AppImage 被移动后,旧 Exec 路径会失效,需重写以保证仍能拉起)
+  refreshLinuxAutoLaunch();
 
   // 4. 创建主窗口
   mainWindow = WindowManager.createMainWindow();

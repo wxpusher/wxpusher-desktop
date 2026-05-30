@@ -12,6 +12,7 @@ import { UpdateManager } from '../managers/UpdateManager';
 import { PushCheckManager } from '../managers/PushCheckManager';
 import { AnnouncementBannerManager } from '../managers/AnnouncementBannerManager';
 import { getDesktopPlatform, getDeviceName, getAppVersion } from '../utils/platform';
+import { isLinuxAutoLaunchEnabled, setLinuxAutoLaunch } from '../utils/linuxAutoLaunch';
 import { logger } from '../utils/logger';
 
 // URL 协议白名单（P0 安全修复：防止 file:// 等危险协议）
@@ -196,14 +197,25 @@ export function registerIpcHandlers(): void {
   });
 
   // 开机自启
+  // 注:Windows 上 getLoginItemSettings 判断 openAtLogin 时会用 path+args 拼出预期的注册表值
+  // 再与实际存储值比对,因此读取必须传入与写入完全相同的 args,否则带 args 写入的项会比对失败、
+  // 误报为未开启(macOS 不依赖 args,传了无害)。
+  const AUTO_LAUNCH_ARGS = ['--opened-at-login'];
+
   ipcMain.handle(IPC_CHANNELS.AUTO_LAUNCH_GET, () => {
-    return app.getLoginItemSettings().openAtLogin;
+    // Linux:Electron 的 login item API 是 no-op,改用 XDG Autostart 文件判定真实状态。
+    if (process.platform === 'linux') return isLinuxAutoLaunchEnabled();
+    return app.getLoginItemSettings({ args: AUTO_LAUNCH_ARGS }).openAtLogin;
   });
 
   ipcMain.handle(IPC_CHANNELS.AUTO_LAUNCH_SET, (_, enabled: boolean) => {
-    // 带上自定义参数:Windows/Linux 登录项启动时会携带,主进程据此识别"开机自启启动"
+    if (process.platform === 'linux') {
+      setLinuxAutoLaunch(enabled);
+      return;
+    }
+    // 带上自定义参数:Windows 登录项启动时会携带,主进程据此识别"开机自启启动"
     // (macOS 用 getLoginItemSettings().wasOpenedAtLogin 识别,args 忽略但无害)
-    app.setLoginItemSettings({ openAtLogin: enabled, args: ['--opened-at-login'] });
+    app.setLoginItemSettings({ openAtLogin: enabled, args: AUTO_LAUNCH_ARGS });
   });
 
   // 系统操作（P0 安全修复：URL 协议白名单）
