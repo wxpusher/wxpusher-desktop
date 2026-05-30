@@ -35,7 +35,12 @@ export default function MainView() {
     const offUpdate = window.electronAPI.onUpdateStatus((status) => {
       const store = useAppStore.getState();
       store.setUpdateStatus(status);
-      if (status.phase === 'no-update' || status.phase === 'error') return;
+      // no-update / error：关闭可能在 checking 阶段打开的弹窗（手动检查会先弹"正在检查更新…"），
+      // 否则弹窗会停留在 no-update 状态并被 UpdateModal 渲染成误导性的"发现新版本"。
+      if (status.phase === 'no-update' || status.phase === 'error') {
+        store.setUpdateModalOpen(false);
+        return;
+      }
       // 强制：始终弹（阻塞）
       if (status.forceUpdate) {
         store.setUpdateModalOpen(true);
