@@ -102,7 +102,6 @@ export default function LoginView() {
               const { code: newCode, expires } = await window.electronAPI.createLoginQrcode();
               setQrcodeCode(newCode);
               setQrcodeUrl(`${baseUrlRef.current}/api/qrcode/${newCode}.jpg`);
-              setCountdown(expires);
               startCountdown(expires);
               startPolling(newCode);
             } catch {
@@ -118,12 +117,20 @@ export default function LoginView() {
 
   const handleRefreshQrcode = useCallback(async () => {
     try {
+      // 先停掉可能仍在运行的旧轮询，否则 startPolling 的守卫会挡掉新轮询
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = undefined;
+      }
+      // 手动刷新后恢复自动重建额度
+      rebuildCountRef.current = 0;
+      setRebuildCount(0);
+
       setError(null);
       setQrcodeUrl(null);
       const { code, expires } = await window.electronAPI.createLoginQrcode();
       setQrcodeCode(code);
       setQrcodeUrl(`${baseUrlRef.current}/api/qrcode/${code}.jpg`);
-      setCountdown(expires);
       startCountdown(expires);
       if (pushTokenReady) {
         startPolling(code);
@@ -142,7 +149,6 @@ export default function LoginView() {
       const { code, expires } = await window.electronAPI.createLoginQrcode();
       setQrcodeCode(code);
       setQrcodeUrl(`${baseUrlRef.current}/api/qrcode/${code}.jpg`);
-      setCountdown(expires);
       startCountdown(expires);
       // 如果 pushToken 已就绪，立即开始轮询
       if (pushTokenReady) {
