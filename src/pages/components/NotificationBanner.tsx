@@ -2,10 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { XCircle } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
 import type { NotifyPermissionState } from '../../types';
-
-// Linux 无统一的系统通知设置入口,只能文案引导
-const LINUX_HINT =
-  '请在系统的「通知」设置中允许 WxPusher 发送通知（GNOME：设置 → 通知；KDE：系统设置 → 通知）。';
+import { LINUX_NOTIFY_HINT } from '../../utils/notify';
 
 export default function NotificationBanner() {
   const [state, setState] = useState<NotifyPermissionState>({
@@ -37,7 +34,7 @@ export default function NotificationBanner() {
       <XCircle size={16} />
       <span>
         {state.guide === 'manual'
-          ? `通知权限未开启，桌面提醒将无法弹出。${LINUX_HINT}`
+          ? `通知权限未开启，桌面提醒将无法弹出。${LINUX_NOTIFY_HINT}`
           : '通知权限未开启，桌面提醒将无法弹出'}
       </span>
       {state.guide === 'settings' && (
