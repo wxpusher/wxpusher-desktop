@@ -66,6 +66,12 @@ export interface CheckAppMsgReason {
   reason: string;
 }
 
+// 手动【重新检查】的判别式结果：让渲染层能区分「未登录失效 / 网络异常 / 服务端原因 / 正常」
+export type PushCheckOutcome =
+  | { status: 'ok'; result: CheckAppMsgReason | null } // 请求成功，result 为服务端 reason（payload 可能为 null）
+  | { status: 'not-logged-in' } // 主进程无 deviceToken，未发起请求
+  | { status: 'error' }; // 网络/解析等异常
+
 export interface WsPushNoteMsg {
   msgType: number;
   createTime: number;
@@ -146,7 +152,7 @@ declare global {
       onListBannerResult: (
         callback: (result: BannerData | null) => void
       ) => (() => void) | undefined;
-      checkNoMsg: () => Promise<CheckAppMsgReason | null>;
+      checkNoMsg: () => Promise<PushCheckOutcome>;
       getLastPushCheck: () => Promise<{ lastAt: number; lastResult: CheckAppMsgReason | null }>;
       onPushCheckResult: (
         callback: (result: CheckAppMsgReason | null) => void

@@ -109,14 +109,20 @@ export default function SettingsPage() {
     }
     setPushChecking(true);
     try {
-      const result = await window.electronAPI.checkNoMsg();
-      if (!result) {
-        message.error('推送检查失败，请稍后重试', 5);
+      const outcome = await window.electronAPI.checkNoMsg();
+      // 主进程无 deviceToken（与渲染层 loginInfo 可能不同步）：提示重新登录而非笼统失败
+      if (outcome.status === 'not-logged-in') {
+        message.warning('登录状态已失效，请重新登录后再检查');
         return;
       }
-      // code === 0 表示状态正常，无异常时只用 toast 提示
-      if (result.code === 0) {
-        message.success(result.reason || '推送状态正常');
+      if (outcome.status === 'error') {
+        message.error('网络异常，推送检查失败，请稍后重试', 5);
+        return;
+      }
+      const result = outcome.result;
+      // result 为空或 code === 0 都视为状态正常，无异常时只用 toast 提示
+      if (!result || result.code === 0) {
+        message.success(result?.reason || '推送状态正常');
         return;
       }
       // 存在异常时弹窗说明（须用 App.useApp 的 modal，静态 Modal 不继承暗色主题）
@@ -125,6 +131,8 @@ export default function SettingsPage() {
         content: result.reason || '推送状态异常',
         okText: '我知道了',
       });
+    } catch {
+      message.error('推送检查异常，请稍后重试', 5);
     } finally {
       setPushChecking(false);
     }

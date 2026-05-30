@@ -66,9 +66,11 @@ export class ApiService {
     }
 
     const start = Date.now();
-    if (options.body !== undefined) {
-      logger.info(`[API] ${options.method} ${options.path} req=${truncate(options.body)}`);
-    }
+    // 每个请求都打「开始」行（含无 body 的 GET，如 no-msg-check），与响应/失败行成对，便于排查
+    logger.info(
+      `[API] -> ${options.method} ${options.path}` +
+        (options.body !== undefined ? ` req=${truncate(options.body)}` : '')
+    );
     try {
       const response = await fetch(url, {
         method: options.method,
