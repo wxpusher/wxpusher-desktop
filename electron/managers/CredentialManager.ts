@@ -79,14 +79,12 @@ export class CredentialManager {
     try {
       const filePath = this.getCredentialPath();
       if (!fs.existsSync(filePath)) {
-        logger.info('凭证文件不存在');
+        logger.debug('凭证文件不存在');
         return null;
       }
       const encrypted = fs.readFileSync(filePath);
       const cred = await this.decryptFromFile(encrypted);
-      if (cred) {
-        logger.info(`凭证读取成功: deviceToken=${cred.deviceToken?.substring(0, 8)}... pushToken=${cred.pushToken?.substring(0, 8) || 'null'}`);
-      }
+      
       return cred;
     } catch (err) {
       logger.error('凭证读取/解密失败:', err);

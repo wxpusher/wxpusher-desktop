@@ -27,12 +27,12 @@ export class PushCheckManager {
       return { status: 'ok', result: lastResult };
     }
 
-    logger.info(`PushCheck 开始：force=${opts.force} effectiveForce=${effectiveForce}`);
+    logger.debug(`PushCheck 开始：force=${opts.force} effectiveForce=${effectiveForce}`);
     this.inflight = (async (): Promise<PushCheckOutcome> => {
       const cred = await CredentialManager.getCredential();
       // 未登录：不落盘、不广播，也不消费 firstRunDone（等登录后再算「首次」）
       if (!cred?.deviceToken) {
-        logger.info('PushCheck 跳过：未登录（无 deviceToken），不发起检查');
+        logger.debug('PushCheck 跳过：未登录（无 deviceToken），不发起检查');
         return { status: 'not-logged-in' };
       }
       // 进入真实请求阶段就视为已完成首次跑动，后续 show 受节流约束

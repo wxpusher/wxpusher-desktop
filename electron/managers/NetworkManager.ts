@@ -24,7 +24,7 @@ class NetworkManagerClass {
 
     // preload 顶层 IIFE 上报的调试日志，统一打到主进程 logger，方便排查 preload 是否正常加载
     ipcMain.on('debug:log', (_e, msg: string) => {
-      logger.info(`[debug] ${msg}`);
+      logger.debug(`[debug] ${msg}`);
     });
 
     // 感知「网络可能变化」的平台差异收敛在 NetworkChangeSource：
@@ -143,22 +143,22 @@ class NetworkManagerClass {
   private evaluateAndApply(source: string): void {
     if (this.evaluating) {
       this.pendingEvaluate = true;
-      logger.info(`[NetworkManager] evaluate skip(${source})，已有评估在进行，挂起 pending`);
+      logger.debug(`[NetworkManager] evaluate skip(${source})，已有评估在进行，挂起 pending`);
       return;
     }
     this.evaluating = true;
-    logger.info(`[NetworkManager] evaluate start(${source})`);
+    logger.debug(`[NetworkManager] evaluate start(${source})`);
     try {
       const t0 = Date.now();
       // 仅依据过滤后的活跃网卡签名；不探测 HTTP/WS。空签名=离线。
       const sig = this.computeInterfaceSignature();
       const online = sig !== '';
       if (online) {
-        logger.info(`[NetworkManager] detectOnline: 有活跃网卡，判在线（不探测 baseUrl） signature=[${sig}]`);
+        logger.debug(`[NetworkManager] detectOnline: 有活跃网卡，判在线 signature=[${sig}]`);
       } else {
-        logger.info('[NetworkManager] detectOnline: 无活跃网卡，判离线');
+        logger.debug('[NetworkManager] detectOnline: 无活跃网卡，判离线');
       }
-      logger.info(`[NetworkManager] evaluate done(${source}): online=${online}, 耗时=${Date.now() - t0}ms`);
+      logger.debug(`[NetworkManager] evaluate done(${source}): online=${online}, 耗时=${Date.now() - t0}ms`);
       this.applyStatus(online ? 'online' : 'offline', sig, source);
     } finally {
       this.evaluating = false;
@@ -189,7 +189,7 @@ class NetworkManagerClass {
         WsManager.handleNetworkChanged();
         return;
       }
-      logger.info(`[NetworkManager] 状态未变更(${source}): ${nextStatus}`);
+      logger.debug(`[NetworkManager] 状态未变更(${source}): ${nextStatus}`);
       return;
     }
 

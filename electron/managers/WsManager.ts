@@ -115,7 +115,7 @@ class WsManagerClass {
         try {
           const msg = JSON.parse(raw);
           const logDetail = msg.msgType === 20001 ? `mid=${msg.mid} title=${msg.title}` : `pushToken=${(msg as any).pushToken || '-'} msg=${(msg as any).msg || '-'}`;
-          logger.info(`WS 收到消息: msgType=${msg.msgType} ${logDetail}`);
+          logger.debug(`WS 收到消息: msgType=${msg.msgType} ${logDetail}`);
         } catch {}
         this.handleMessage(raw);
       });
@@ -178,7 +178,7 @@ class WsManagerClass {
           logger.info(`PUSH_NOTE 收到: mid=${pushMsg.mid} title=${pushMsg.title} summary=${pushMsg.summary?.substring(0, 50)}`);
           try {
             WindowManager.sendToRenderer('ws:new-message', pushMsg);
-            logger.info('PUSH_NOTE 已发送到 renderer');
+            logger.debug('PUSH_NOTE 已发送到 renderer');
           } catch (e) {
             logger.warn('PUSH_NOTE 发送到 renderer 失败:', e);
           }
@@ -188,7 +188,7 @@ class WsManagerClass {
               body: pushMsg.summary?.substring(0, 100) || '',
               messageId: pushMsg.mid,
             });
-            logger.info('PUSH_NOTE 通知已调用');
+            logger.debug('PUSH_NOTE 通知已调用');
           } catch (e) {
             logger.warn('PUSH_NOTE 通知失败:', e);
           }
@@ -256,10 +256,10 @@ class WsManagerClass {
     // 未登录时跳过上报，pushToken 会在登录时通过 registerDevice 一起提交
     const credential = await CredentialManager.getCredential();
     if (!credential?.deviceToken) {
-      logger.info('未登录，跳过 pushToken 上报');
+      logger.debug('未登录，跳过 pushToken 上报');
       return;
     }
-    logger.info(`开始上报 pushToken: ${pushToken.substring(0, 12)}...`);
+    logger.debug(`开始上报 pushToken: ${pushToken.substring(0, 12)}...`);
     const delays = [5_000, 15_000, 45_000];
     for (let i = 0; i < 3; i++) {
       try {
@@ -269,7 +269,7 @@ class WsManagerClass {
           ...(credential.deviceUuid ? { deviceUuid: credential.deviceUuid } : {}),
           platform: getDesktopPlatform(),
         });
-        logger.info('pushToken 上报成功');
+        logger.debug('pushToken 上报成功');
         return;
       } catch (err: any) {
         // code=1001 设备不存在：凭证已失效，无需重试，走登出并要求重新登录

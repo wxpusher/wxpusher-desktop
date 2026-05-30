@@ -156,7 +156,10 @@ app.on('web-contents-created', (_, contents) => {
 app.on('web-contents-created', (_, contents) => {
   contents.on('console-message', (_event, level, message, line, sourceId) => {
     const levels = ['verbose', 'info', 'warning', 'error'];
-    console.log(`[RENDERER ${levels[level]}] ${message} (${sourceId}:${line})`);
+    // 仅 error/warn 级别转发，避免 renderer 高频 debug 日志撑爆文件
+    if (level >= 2) {
+      console.log(`[RENDERER ${levels[level]}] ${message} (${sourceId}:${line})`);
+    }
   });
   // 真实网络错误（DNS/连接/断网/超时等）：iframe 子框架失败上报渲染层即时显示失败界面。
   // HTTP 错误状态（如 502）不走此事件，由 webRequest.onCompleted 兜住（见 utils/csp.ts）。

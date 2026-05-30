@@ -41,11 +41,11 @@ class NotificationManagerClass {
   }
 
   showNotification(options: { title: string; body: string; messageId: number }): void {
-    logger.info(`showNotification: mode=${this.notificationMode} title=${options.title}`);
+    logger.debug(`showNotification: mode=${this.notificationMode} title=${options.title}`);
 
     // 静默通知:不弹系统横幅、不出声;消息列表已由 WsManager 的 ws:new-message 更新
     if (this.notificationMode === 'quiet') {
-      logger.info('静默通知:跳过系统弹窗');
+      logger.debug('静默通知:跳过系统弹窗');
       return;
     }
 
