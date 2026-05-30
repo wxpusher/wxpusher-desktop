@@ -49,10 +49,6 @@ function App() {
     // 认证过期
     const offAuth = window.electronAPI.onAuthExpired(() => useAppStore.getState().logout());
 
-    // 偏好
-    window.electronAPI.getPref('onboardingCompleted').then((v) => {
-      if (v) useAppStore.getState().setOnboardingCompleted(v);
-    });
     // 更新弹窗「稍后」的抑制：恢复 版本+日期，仅用于抑制"当天"对该版本的自动弹窗
     Promise.all([
       window.electronAPI.getPref('updateDismissedVersion'),

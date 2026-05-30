@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Modal, Switch } from 'antd';
-import { useAppStore } from '../../stores/appStore';
 
 export default function OnboardingGuide() {
-  const onboardingCompleted = useAppStore((s) => s.onboardingCompleted);
   const [show, setShow] = useState(false);
   const [autoLaunch, setAutoLaunch] = useState(true);
 
   useEffect(() => {
-    if (!onboardingCompleted) {
-      setShow(true);
-    }
-  }, [onboardingCompleted]);
+    // 仅在首次登录后引导：直接读取持久化偏好后再决定是否展示，
+    // 避免用初始默认值抢先弹窗，导致老用户每次打开都重复看到。
+    let active = true;
+    window.electronAPI.getPref('onboardingCompleted').then((v) => {
+      if (active && !v) setShow(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   if (!show) return null;
 
@@ -43,7 +47,6 @@ export default function OnboardingGuide() {
           className="btn-primary"
           onClick={() => {
             setShow(false);
-            useAppStore.getState().setOnboardingCompleted(true);
             window.electronAPI.setPref('onboardingCompleted', true);
             if (autoLaunch) {
               window.electronAPI.setAutoLaunch(true);
