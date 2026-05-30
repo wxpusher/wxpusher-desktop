@@ -56,7 +56,12 @@ const defaults: DesktopPreferences = {
   appFeUrl: app.isPackaged ? PROD_APP_FE_URL : TEST_APP_FE_URL,
 };
 
-const store = new Store<DesktopPreferences>({ defaults });
+// dev 与打包版隔离持久化，避免 dev(默认连测试) 的缓存(banner/no-msg-check 等)被打包版冷启动
+// 读出来闪现「测试环境」内容。打包版沿用默认 name 'config'，老用户数据不受影响。
+const store = new Store<DesktopPreferences>({
+  defaults,
+  name: app.isPackaged ? 'config' : 'config-dev',
+});
 
 // 一次性迁移:notificationSound 布尔(中间版本) 与 旧 4 档 notificationMode → 新三档
 if (store.has('notificationSound' as any)) {
