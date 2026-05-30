@@ -29,28 +29,32 @@ export class PushCheckManager {
 
     logger.debug(`PushCheck 开始：force=${opts.force} effectiveForce=${effectiveForce}`);
     this.inflight = (async (): Promise<PushCheckOutcome> => {
-      const cred = await CredentialManager.getCredential();
-      // 未登录：不落盘、不广播，也不消费 firstRunDone（等登录后再算「首次」）
-      if (!cred?.deviceToken) {
-        logger.debug('PushCheck 跳过：未登录（无 deviceToken），不发起检查');
-        return { status: 'not-logged-in' };
-      }
-      // 进入真实请求阶段就视为已完成首次跑动，后续 show 受节流约束
-      this.firstRunDone = true;
+      // 外层 try/finally：保证 not-logged-in / ok / error 三条返回路径都释放 inflight，
+      // 否则未登录的提前 return 会让已 resolve 的 inflight 永久驻留，登录成功后仍卡在 not-logged-in
       try {
-        const result = (await ApiService.checkNoMsg()) as CheckAppMsgReason | null;
-        PreferencesManager.set('checkReasonThrottleAt', Date.now());
-        PreferencesManager.set('pushCheckLastResult', result ?? null);
-        WindowManager.sendToRenderer(IPC_CHANNELS.MSG_PUSH_CHECK_RESULT, result ?? null);
-        return { status: 'ok', result: result ?? null };
-      } catch (e) {
-        // 网络/抛错：把结果落 null（避免误把传输错误当成服务端 reason），
-        // 但仍 bump 节流戳，防止离线时连续 show 触发请求风暴
-        logger.warn(`PushCheck 失败: ${(e as Error).message}`);
-        PreferencesManager.set('checkReasonThrottleAt', Date.now());
-        PreferencesManager.set('pushCheckLastResult', null);
-        WindowManager.sendToRenderer(IPC_CHANNELS.MSG_PUSH_CHECK_RESULT, null);
-        return { status: 'error' };
+        const cred = await CredentialManager.getCredential();
+        // 未登录：不落盘、不广播，也不消费 firstRunDone（等登录后再算「首次」）
+        if (!cred?.deviceToken) {
+          logger.debug('PushCheck 跳过：未登录（无 deviceToken），不发起检查');
+          return { status: 'not-logged-in' };
+        }
+        // 进入真实请求阶段就视为已完成首次跑动，后续 show 受节流约束
+        this.firstRunDone = true;
+        try {
+          const result = (await ApiService.checkNoMsg()) as CheckAppMsgReason | null;
+          PreferencesManager.set('checkReasonThrottleAt', Date.now());
+          PreferencesManager.set('pushCheckLastResult', result ?? null);
+          WindowManager.sendToRenderer(IPC_CHANNELS.MSG_PUSH_CHECK_RESULT, result ?? null);
+          return { status: 'ok', result: result ?? null };
+        } catch (e) {
+          // 网络/抛错：把结果落 null（避免误把传输错误当成服务端 reason），
+          // 但仍 bump 节流戳，防止离线时连续 show 触发请求风暴
+          logger.warn(`PushCheck 失败: ${(e as Error).message}`);
+          PreferencesManager.set('checkReasonThrottleAt', Date.now());
+          PreferencesManager.set('pushCheckLastResult', null);
+          WindowManager.sendToRenderer(IPC_CHANNELS.MSG_PUSH_CHECK_RESULT, null);
+          return { status: 'error' };
+        }
       } finally {
         this.inflight = null;
       }
