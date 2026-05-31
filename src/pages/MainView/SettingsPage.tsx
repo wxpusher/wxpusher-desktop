@@ -421,6 +421,14 @@ export default function SettingsPage() {
               <ExternalLink size={12} />
               提交反馈
             </button>
+            <button
+              onClick={() =>
+                window.electronAPI.openExternal('https://wxpusher.zjiecode.com/contact.html')
+              }
+            >
+              <ExternalLink size={12} />
+              联系我们
+            </button>
           </div>
         </div>
         <div className="settings-row">
