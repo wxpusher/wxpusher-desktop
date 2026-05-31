@@ -302,6 +302,9 @@ export default function SettingsPage() {
                 请在系统的「通知」设置中允许 WxPusher 发送通知
               </span>
             )}
+            <span className="hint">
+              如收不到消息提醒请检查是否打开了系统通知权限。
+            </span>
           </div>
         </div>
         <div className="settings-row">
