@@ -72,6 +72,12 @@ export type PushCheckOutcome =
   | { status: 'not-logged-in' } // 主进程无 deviceToken，未发起请求
   | { status: 'error' }; // 网络/解析等异常
 
+// 发送测试消息的判别式结果：区分未登录 / 异常 / 成功
+export type SendTestOutcome =
+  | { status: 'ok' }
+  | { status: 'not-logged-in' }
+  | { status: 'error'; msg?: string };
+
 export interface WsPushNoteMsg {
   msgType: number;
   createTime: number;
@@ -153,6 +159,7 @@ declare global {
         callback: (result: BannerData | null) => void
       ) => (() => void) | undefined;
       checkNoMsg: () => Promise<PushCheckOutcome>;
+      sendTestMessage: () => Promise<SendTestOutcome>;
       getLastPushCheck: () => Promise<{ lastAt: number; lastResult: CheckAppMsgReason | null }>;
       onPushCheckResult: (
         callback: (result: CheckAppMsgReason | null) => void

@@ -151,6 +151,21 @@ export function registerIpcHandlers(): void {
     return PushCheckManager.getLast();
   });
 
+  // 发送测试消息：区分未登录 / 网络或业务异常 / 成功，便于渲染层精准提示
+  ipcMain.handle(IPC_CHANNELS.MSG_SEND_TEST, async () => {
+    const cred = await CredentialManager.getCredential();
+    if (!cred?.deviceToken) {
+      return { status: 'not-logged-in' };
+    }
+    try {
+      await ApiService.sendTestMessage();
+      return { status: 'ok' };
+    } catch (e) {
+      logger.warn(`SendTest 失败: ${(e as Error).message}`);
+      return { status: 'error', msg: (e as Error)?.message };
+    }
+  });
+
   // 设备
   ipcMain.handle(IPC_CHANNELS.DEVICE_GET_INFO, async () => {
     return ApiService.getUserDeviceInfo().catch(() => null);

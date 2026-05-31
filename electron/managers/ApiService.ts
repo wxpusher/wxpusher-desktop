@@ -202,6 +202,11 @@ export class ApiService {
     return this.request({ method: 'GET', path: '/api/need-login/device/no-msg-check' });
   }
 
+  // 给当前登录用户发送一条系统测试消息（无需 body，仅凭 deviceToken），用于验证消息接收链路
+  static async sendTestMessage(): Promise<any> {
+    return this.request({ method: 'POST', path: '/api/need-login/device/message/send-test' });
+  }
+
   static async getListBanner(): Promise<any> {
     return this.request({ method: 'GET', path: '/api/need-login/device/list-banner' });
   }

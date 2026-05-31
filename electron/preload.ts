@@ -188,6 +188,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener(IPC_CHANNELS.MSG_LIST_BANNER_RESULT, handler);
   },
   checkNoMsg: () => ipcRenderer.invoke(IPC_CHANNELS.MSG_CHECK_NO_MSG),
+  sendTestMessage: () => ipcRenderer.invoke(IPC_CHANNELS.MSG_SEND_TEST),
   getLastPushCheck: () => ipcRenderer.invoke(IPC_CHANNELS.MSG_PUSH_CHECK_GET_LAST),
   onPushCheckResult: (callback: (result: any) => void) => {
     const handler = (_: any, result: any) => callback(result);

@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { RefreshCw, Trash2, CheckCheck, X, Search } from 'lucide-react';
-import { Spin, App } from 'antd';
+import { Spin, App, Modal, Alert, Button } from 'antd';
 import { useAppStore } from '../../stores/appStore';
 import { getRelativeDateTime } from '../../utils/time';
-import type { MessageItem } from '../../types';
+import type { MessageItem, PushCheckOutcome, SendTestOutcome } from '../../types';
 
 interface Props {
   onSelect: (msg: MessageItem | null) => void;
@@ -39,6 +39,47 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
   // 刷新按钮旋转状态：点击后旋转，加载完成且至少转满一圈后停止
   const [isSpinning, setIsSpinning] = useState(false);
   const spinStartRef = useRef(0);
+
+  // 「为什么我收不到消息？」弹窗：静态科普 + 打开时实时跑一次 no-msg-check
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [pushChecking, setPushChecking] = useState(false);
+  const [pushCheck, setPushCheck] = useState<PushCheckOutcome | null>(null);
+
+  const openHelp = useCallback(async () => {
+    setHelpOpen(true);
+    setPushCheck(null);
+    setPushChecking(true);
+    try {
+      setPushCheck(await window.electronAPI.checkNoMsg());
+    } catch {
+      setPushCheck({ status: 'error' });
+    } finally {
+      setPushChecking(false);
+    }
+  }, []);
+
+  // 发送测试消息：验证消息接收链路是否正常
+  const [sendingTest, setSendingTest] = useState(false);
+  const handleSendTest = useCallback(async () => {
+    setSendingTest(true);
+    try {
+      let outcome: SendTestOutcome;
+      try {
+        outcome = await window.electronAPI.sendTestMessage();
+      } catch {
+        outcome = { status: 'error' };
+      }
+      if (outcome.status === 'not-logged-in') {
+        message.warning('登录状态已失效，请重新登录后再试');
+      } else if (outcome.status === 'error') {
+        message.error(`测试消息发送失败：${outcome.msg || '请稍后重试'}`, 5);
+      } else {
+        message.success('测试消息已发送，请留意消息列表与通知栏');
+      }
+    } finally {
+      setSendingTest(false);
+    }
+  }, [message]);
 
   const handleRefresh = () => {
     if (isSpinning) return; // 防止旋转中重复触发
@@ -409,9 +450,77 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
             />
           </svg>
           <div className="title">{searchMode ? '没有匹配的消息' : '暂无消息'}</div>
-          {!searchMode && <div className="link">为什么我收不到消息？</div>}
+          {!searchMode && (
+            <div className="link" onClick={openHelp}>
+              为什么我收不到消息？
+            </div>
+          )}
         </div>
       )}
+
+      {/* 「为什么我收不到消息？」弹窗：静态科普 + 实时检测 */}
+      <Modal
+        open={helpOpen}
+        title="为什么我收不到消息？"
+        onCancel={() => setHelpOpen(false)}
+        centered
+        width={460}
+        footer={[
+          <Button
+            key="contact"
+            onClick={() => window.electronAPI.openExternal('https://wxpusher.zjiecode.com/contact.html')}
+          >
+            联系我们
+          </Button>,
+          <Button
+            key="docs"
+            onClick={() => window.electronAPI.openExternal('https://wxpusher.zjiecode.com/docs/#/')}
+          >
+            帮助文档
+          </Button>,
+          <Button key="ok" type="primary" onClick={() => setHelpOpen(false)}>
+            我知道了
+          </Button>,
+        ]}
+      >
+        <div className="no-msg-help">
+          <div className="title">接收消息需要满足以下条件，任一不满足都可能收不到：</div>
+          <ul>
+            <li>已订阅至少一个消息源（应用或主题）；未订阅不会有任何消息。</li>
+            <li>消息总开关已开启；关闭后将拒收所有消息。</li>
+            <li>本设备的推送提醒已开启；关闭后列表仍能收到消息，但不会有通知提醒。</li>
+            <li>未超出推送数量上限；达到上限后列表与通知栏都不再接收，每天 24 点自动恢复。</li>
+            <li>未超出通知栏提醒数量上限；达到上限后列表仍能收到，但不再弹出通知，每天 24 点自动恢复。</li>
+            <li>订阅的消息源近 72 小时内有发送消息；长期没有新消息时列表自然为空。</li>
+          </ul>
+          <div className="send-test">
+            <Button type="primary" loading={sendingTest} onClick={handleSendTest}>
+              发送测试消息
+            </Button>
+            <span className="hint">向当前账号发送一条测试消息，验证消息接收是否正常。</span>
+          </div>
+          <div className="check-result">
+            {pushChecking ? (
+              <div className="checking">
+                <Spin size="small" />
+                <span>正在检测当前推送状态…</span>
+              </div>
+            ) : pushCheck?.status === 'ok' && pushCheck.result && pushCheck.result.code !== 0 ? (
+              <Alert type="warning" showIcon message={pushCheck.result.reason} />
+            ) : pushCheck?.status === 'ok' ? (
+              <Alert
+                type="success"
+                showIcon
+                message="当前没有检测到异常，可能是你的订阅还没有发送消息，你可以稍等一段时间再试试。"
+              />
+            ) : pushCheck?.status === 'not-logged-in' ? (
+              <Alert type="info" showIcon message="登录状态已失效，请重新登录后再检查。" />
+            ) : pushCheck?.status === 'error' ? (
+              <Alert type="info" showIcon message="网络异常，本次检测失败，可稍后重试。" />
+            ) : null}
+          </div>
+        </div>
+      </Modal>
 
       {/* 右键菜单 */}
       {contextMenu && (

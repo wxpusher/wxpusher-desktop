@@ -33,6 +33,7 @@ export const IPC_CHANNELS = {
   MSG_CHECK_NO_MSG: 'msg:check-no-msg',
   MSG_PUSH_CHECK_GET_LAST: 'msg:push-check-get-last',
   MSG_PUSH_CHECK_RESULT: 'msg:push-check-result',
+  MSG_SEND_TEST: 'msg:send-test',
 
   // 设备
   DEVICE_GET_INFO: 'device:get-info',

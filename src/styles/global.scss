@@ -1240,6 +1240,50 @@ button {
   }
 }
 
+/* 「为什么我收不到消息？」弹窗内容（antd Modal/Alert/Spin 自身随主题适配暗色） */
+.no-msg-help {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+
+  .title {
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.25em;
+
+    li {
+      margin-bottom: var(--spacing-xs);
+    }
+  }
+
+  .send-test {
+    margin-top: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+
+    .hint {
+      color: var(--color-text-tertiary);
+    }
+  }
+
+  .check-result {
+    margin-top: var(--spacing-md);
+
+    .checking {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      color: var(--color-text-tertiary);
+    }
+  }
+}
+
 /* ========================================
  * SETTINGS PAGE
  * ======================================== */

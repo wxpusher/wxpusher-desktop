@@ -138,6 +138,29 @@ export default function SettingsPage() {
     }
   }, [loginInfo, message, modal]);
 
+  const [sendingTest, setSendingTest] = useState(false);
+  const handleSendTest = useCallback(async () => {
+    if (!loginInfo) {
+      message.warning('请先登录后再发送测试消息');
+      return;
+    }
+    setSendingTest(true);
+    try {
+      const outcome = await window.electronAPI.sendTestMessage();
+      if (outcome.status === 'not-logged-in') {
+        message.warning('登录状态已失效，请重新登录后再试');
+      } else if (outcome.status === 'error') {
+        message.error(`测试消息发送失败：${outcome.msg || '请稍后重试'}`, 5);
+      } else {
+        message.success('测试消息已发送，请留意消息列表与通知栏');
+      }
+    } catch {
+      message.error('测试消息发送异常，请稍后重试', 5);
+    } finally {
+      setSendingTest(false);
+    }
+  }, [loginInfo, message]);
+
   const handleLogout = useCallback(() => {
     modal.confirm({
       title: '退出登录',
@@ -313,6 +336,15 @@ export default function SettingsPage() {
             <button onClick={handleRecheckPush} disabled={pushChecking}>
               {pushChecking ? '检查中...' : '重新检查'}
             </button>
+          </div>
+        </div>
+        <div className="settings-row">
+          <div className="settings-label">发送测试消息</div>
+          <div className="settings-value">
+            <button onClick={handleSendTest} disabled={sendingTest}>
+              {sendingTest ? '发送中...' : '发送测试消息'}
+            </button>
+            <span className="hint">向当前账号发送一条测试消息，验证消息接收是否正常。</span>
           </div>
         </div>
         <div className="settings-row">
