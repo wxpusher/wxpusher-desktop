@@ -54,7 +54,7 @@ export class CredentialManager {
     return this.cachedMachineId!;
   }
 
-  static async saveCredential(data: CredentialData): Promise<void> {
+  static async saveCredential(data: CredentialData, opts?: { silent?: boolean }): Promise<void> {
     try {
       const filePath = this.getCredentialPath();
       // machine-id + PBKDF2 派生密钥，自定义加密（不使用 safeStorage，避免 mac 上弹出钥匙串安全提醒）
@@ -68,7 +68,8 @@ export class CredentialManager {
       const authTag = cipher.getAuthTag();
       const payload = Buffer.concat([salt, iv, authTag, encrypted]);
       fs.writeFileSync(filePath, payload);
-      logger.info('凭证已保存');
+      // silent:由 clearCredential 内部调用时静默,避免与「已清除」双重打印
+      if (!opts?.silent) logger.info('凭证已保存');
     } catch (e) {
       logger.error('保存凭证失败', e);
       throw e;
@@ -122,8 +123,11 @@ export class CredentialManager {
       // 保留 deviceUuid，下次登录据此让服务端复用同一设备
       const existing = await this.getCredential();
       if (existing?.deviceUuid) {
-        await this.saveCredential({ deviceUuid: existing.deviceUuid });
-        logger.info('凭证已清除（保留 deviceUuid）');
+        // 仅当确有 deviceToken/pushToken 可清时才算「真实清除」并打印,
+        // 否则鉴权过期时并发 API 反复清理已是纯 {deviceUuid} 的状态会刷屏
+        const hadCredential = !!(existing.deviceToken || existing.pushToken);
+        await this.saveCredential({ deviceUuid: existing.deviceUuid }, { silent: true });
+        if (hadCredential) logger.info('凭证已清除（保留 deviceUuid）');
         return;
       }
       const filePath = this.getCredentialPath();

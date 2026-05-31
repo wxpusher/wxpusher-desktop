@@ -35,6 +35,8 @@ if (process.platform === 'darwin') {
 
 class NotificationManagerClass {
   private notificationMode: NotificationMode = 'normal';
+  // 仅在授权状态变化时记录,避免每次窗口 focus 触发的检测刷屏
+  private lastLoggedAuthStatus: string | null = null;
 
   init(): void {
     this.notificationMode = PreferencesManager.get('notificationMode');
@@ -90,7 +92,11 @@ class NotificationManagerClass {
       }
       try {
         const status = macPermissions.getAuthStatus('notifications');
-        logger.info(`macOS 通知授权状态: ${status}`);
+        // 仅在状态相对上次发生变化时打印,避免每次 focus 重复刷屏
+        if (status !== this.lastLoggedAuthStatus) {
+          logger.info(`macOS 通知授权状态: ${status}`);
+          this.lastLoggedAuthStatus = status;
+        }
         // authorized / provisional / limited 视为已授权;
         // not determined / denied / restricted 均无法编程申请,统一引导到系统设置。
         if (status === 'authorized' || status === 'provisional' || status === 'limited') {
@@ -102,7 +108,6 @@ class NotificationManagerClass {
         // 而未签名的 dev Electron 这条链路不稳定。把它判为未授权会让开发者被假阴性持续打扰。
         // denied / restricted 是显式信号,仍按未授权处理。
         if (!app.isPackaged && status === 'not determined') {
-          logger.info('dev 模式 + notDetermined:视为已授权,跳过引导');
           return { supported: true, granted: true, guide: 'none' };
         }
         return { supported: true, granted: false, guide: 'settings' };

@@ -98,20 +98,20 @@ class NetworkManagerClass {
   private dumpAllInterfacesRaw(tag: string): void {
     try {
       const ifaces = os.networkInterfaces();
-      const summary: string[] = [];
+      // 只汇总 active(未被过滤)的接口为单行,过滤掉 internal/虚拟/linklocal 噪音
+      const active: string[] = [];
       for (const name of Object.keys(ifaces).sort()) {
         const list = ifaces[name];
         if (!list) continue;
         for (const info of list) {
-          const filteredByName = this.isVirtualInterfaceName(name);
-          const filteredByAddr = this.isLinkLocalAddress(info.family, info.address);
-          const filtered = info.internal || filteredByName || filteredByAddr;
-          summary.push(
-            `${name}/${info.family}/${info.address}${info.internal ? '/internal' : ''}${filteredByName ? '/virt' : ''}${filteredByAddr ? '/linklocal' : ''}${filtered ? ' [filtered]' : ' [active]'}`
-          );
+          const filtered =
+            info.internal ||
+            this.isVirtualInterfaceName(name) ||
+            this.isLinkLocalAddress(info.family, info.address);
+          if (!filtered) active.push(`${name}/${info.family}/${info.address}`);
         }
       }
-      logger.info(`[NetworkManager] interfaces dump(${tag}):\n  ${summary.join('\n  ')}`);
+      logger.info(`[NetworkManager] interfaces(${tag}): ${active.length ? active.join(', ') : 'none'}`);
     } catch (e) {
       logger.warn(`[NetworkManager] dump interfaces 失败(${tag}):`, e);
     }

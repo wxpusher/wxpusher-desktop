@@ -23,7 +23,7 @@ export class PushCheckManager {
     const lastAt = PreferencesManager.get('checkReasonThrottleAt');
     const lastResult = PreferencesManager.get('pushCheckLastResult');
     if (!effectiveForce && Date.now() - lastAt < THROTTLE_MS) {
-      logger.info('PushCheck 命中节流缓存，跳过请求');
+      // 命中节流仅是 no-op 跳过,不打印日志(避免每次 show 刷屏)
       return { status: 'ok', result: lastResult };
     }
 
@@ -42,6 +42,12 @@ export class PushCheckManager {
         this.firstRunDone = true;
         try {
           const result = (await ApiService.checkNoMsg()) as CheckAppMsgReason | null;
+          // 仅在结果相对上次实质变化时打印,既消除高频跳过日志又保留「变化」记录
+          if (JSON.stringify(result ?? null) !== JSON.stringify(lastResult ?? null)) {
+            logger.info(
+              `PushCheck 结果: ${result ? `code=${result.code} hasMsg=${result.hasMsg} hasPush=${result.hasPush}` : 'null'}`
+            );
+          }
           PreferencesManager.set('checkReasonThrottleAt', Date.now());
           PreferencesManager.set('pushCheckLastResult', result ?? null);
           WindowManager.sendToRenderer(IPC_CHANNELS.MSG_PUSH_CHECK_RESULT, result ?? null);

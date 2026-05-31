@@ -66,7 +66,7 @@ class WsManagerClass {
     }
 
     if (!forceReconnect && (this.status === WS_STATUS.Connected || this.status === WS_STATUS.Connecting)) {
-      logger.info(`WS 跳过连接: 当前状态=${this.status}`);
+      // 已连接/连接中时的跳过是 no-op,不打印(真实状态转换已在别处记录)
       return;
     }
 
