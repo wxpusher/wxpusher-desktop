@@ -70,6 +70,11 @@ linux:
     MimeType: x-scheme-handler/wxpusher
     StartupWMClass: wxpusher-desktop
 
+deb:
+  # Ubuntu 24/25 的 AppArmor user namespace 限制可能让 electron-builder 默认检测误判，
+  # 导致 chrome-sandbox 被设为 0755 后 Electron 启动崩溃；安装后强制恢复 SUID sandbox 权限。
+  afterInstall: scripts/linux-deb-after-install.sh
+
 publish:
   provider: generic
   url: https://wxpusher.zjiecode.com/download/
