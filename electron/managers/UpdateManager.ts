@@ -70,9 +70,9 @@ class UpdateManagerClass {
   private downloadedVersion: string | null = null; // 已下载完成的版本号
   private latestPercent = 0; // 最近一次下载进度
 
-  /** 启动 10s 后首检，之后每 4h 静默检查一次 */
+  /** 启动 10s 后首检，之后每 1h 静默检查一次 */
   private static readonly FIRST_CHECK_DELAY = 10 * 1000;
-  private static readonly CHECK_INTERVAL = 4 * 60 * 60 * 1000;
+  private static readonly CHECK_INTERVAL = 60 * 60 * 1000;
 
   init(): void {
     autoUpdater.autoInstallOnAppQuit = true;
