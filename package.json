@@ -1,6 +1,6 @@
 {
   "name": "wxpusher-desktop",
-  "version": "1.0.9",
+  "version": "1.0.34",
   "description": "WxPusher 消息推送平台",
   "main": "dist-electron/main.js",
   "author": "四川思明今创科技有限公司",
