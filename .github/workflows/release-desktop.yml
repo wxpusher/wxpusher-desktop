@@ -1,5 +1,7 @@
 name: Release Desktop
 
+run-name: Release Desktop #${{ github.run_number }} · ${{ github.ref_name }} · run ${{ github.run_id }}
+
 on:
   workflow_dispatch:
     inputs:
