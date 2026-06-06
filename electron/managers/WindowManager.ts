@@ -3,6 +3,7 @@ import path from 'path';
 import { PreferencesManager } from './PreferencesManager';
 import { PushCheckManager } from './PushCheckManager';
 import { AnnouncementBannerManager } from './AnnouncementBannerManager';
+import { UpdateManager } from './UpdateManager';
 import { logger } from '../utils/logger';
 import { getResourcePath } from '../utils/platform';
 import { IPC_CHANNELS } from '../ipc/ipcChannels';
@@ -116,10 +117,11 @@ export class WindowManager {
     win.on('enter-full-screen', syncMaximizedState);
     win.on('leave-full-screen', syncMaximizedState);
 
-    // 主窗口每次显示触发推送检查 + 公告拉取（各自 1h 节流）：覆盖冷启动、托盘、Dock、第二实例所有路径
+    // 主窗口每次显示触发推送检查 + 公告拉取 + 更新检查（各自节流）：覆盖冷启动、托盘、Dock、第二实例所有路径
     win.on('show', () => {
       PushCheckManager.onWindowShown();
       AnnouncementBannerManager.onWindowShown();
+      UpdateManager.onWindowShown();
     });
 
     // 关闭窗口:隐藏到后台,程序继续运行收消息;真正退出走托盘菜单

@@ -69,10 +69,13 @@ class UpdateManagerClass {
   private downloaded = false; // 已下载完成（待重启安装）
   private downloadedVersion: string | null = null; // 已下载完成的版本号
   private latestPercent = 0; // 最近一次下载进度
+  private lastCheckAt = 0; // 最近一次真正发起检查的时间戳（供窗口 show 触发节流）
 
   /** 启动 10s 后首检，之后每 1h 静默检查一次 */
   private static readonly FIRST_CHECK_DELAY = 10 * 1000;
   private static readonly CHECK_INTERVAL = 60 * 60 * 1000;
+  /** 主窗口 show 触发检查的最小间隔：避免托盘/Dock 反复开关时频繁打后端 */
+  private static readonly SHOW_CHECK_THROTTLE = 10 * 60 * 1000;
 
   init(): void {
     autoUpdater.autoInstallOnAppQuit = true;
@@ -88,6 +91,16 @@ class UpdateManagerClass {
     this.checkTimer = setInterval(() => {
       this.checkForUpdates('silent').catch((e) => logger.warn('定时检查失败:', e));
     }, UpdateManagerClass.CHECK_INTERVAL);
+  }
+
+  /**
+   * 主窗口每次显示时触发一次静默检查（带节流）：覆盖冷启动、托盘、Dock、第二实例所有路径，
+   * 让用户"开窗即检查"，比纯 1h 定时更容易撞上新版；命中已下载短路会重新广播 downloaded，
+   * 顺带回填工具栏"新版本已就绪"常驻入口。
+   */
+  onWindowShown(): void {
+    if (Date.now() - this.lastCheckAt < UpdateManagerClass.SHOW_CHECK_THROTTLE) return;
+    this.checkForUpdates('silent').catch((e) => logger.warn('窗口显示触发检查失败:', e));
   }
 
   /**
@@ -107,6 +120,8 @@ class UpdateManagerClass {
       return payload;
     }
     this.checking = true;
+    // 记录"真正发起的一次检查"时间：供窗口 show 触发节流（定时/手动/show 共用同一时间线）
+    this.lastCheckAt = Date.now();
 
     if (source === 'manual') {
       this.send({ phase: 'checking', source, currentVersion });

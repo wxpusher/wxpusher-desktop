@@ -82,7 +82,7 @@ app.whenReady().then(async () => {
   // 7. 初始化网络管理器（统一处理网络变化与 WS 重连）
   NetworkManager.init();
 
-  // 7.1 初始化更新管理器（启动 10s 后首检 + 每 4h 静默检查）
+  // 7.1 初始化更新管理器（启动 10s 后首检 + 每 1h 静默检查 + 窗口 show 触发检查）
   UpdateManager.init();
 
   // 8. 检查是否有已保存的凭证（自动登录场景）
