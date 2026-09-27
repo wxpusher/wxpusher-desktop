@@ -8,6 +8,7 @@ import type { MessageItem } from '../../types';
 
 export default function MessagePage() {
   const messages = useAppStore((s) => s.messages);
+  const searchResults = useAppStore((s) => s.searchResults);
   const [selectedMessage, setSelectedMessage] = useState<MessageItem | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -55,7 +56,9 @@ export default function MessagePage() {
       return;
     }
 
-    const nextSelected = messages.find((item) => item.messageId === selectedMessageId) ?? null;
+    const nextSelected = messages.find((item) => item.messageId === selectedMessageId)
+      ?? searchResults.find((item) => item.messageId === selectedMessageId)
+      ?? null;
     if (!nextSelected) {
       setSelectedMessage(null);
       setSelectedMessageId(null);
@@ -65,7 +68,7 @@ export default function MessagePage() {
     if (selectedMessage !== nextSelected) {
       setSelectedMessage(nextSelected);
     }
-  }, [messages, selectedMessage, selectedMessageId]);
+  }, [messages, searchResults, selectedMessage, selectedMessageId]);
 
   // 初始加载
   useEffect(() => {

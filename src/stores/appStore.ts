@@ -88,7 +88,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   setLogged: (info) => set({ isLogged: true, loginInfo: info }),
   updateLoginInfo: (info) => set((s) => ({ loginInfo: s.loginInfo ? { ...s.loginInfo, ...info } : (info as LoginInfo) })),
-  logout: () => set({ isLogged: false, loginInfo: null, messages: [], selectedIds: [] }),
+  logout: () => set({ isLogged: false, loginInfo: null, messages: [], selectedIds: [], searchResults: [] }),
   setWsStatus: (status) => set({ wsStatus: status }),
   setMessages: (msgs) => set({ messages: uniqueMessages(msgs) }),
   appendMessages: (msgs) =>
@@ -101,10 +101,12 @@ export const useAppStore = create<AppState>((set) => ({
   updateMessage: (id, changes) =>
     set((s) => ({
       messages: s.messages.map((m) => (m.messageId === id ? { ...m, ...changes } : m)),
+      searchResults: s.searchResults.map((m) => (m.messageId === id ? { ...m, ...changes } : m)),
     })),
   removeMessages: (ids) =>
     set((s) => ({
       messages: s.messages.filter((m) => !ids.includes(m.messageId)),
+      searchResults: s.searchResults.filter((m) => !ids.includes(m.messageId)),
       selectedIds: s.selectedIds.filter((id) => !ids.includes(id)),
     })),
   setSelectedIds: (ids) => set({ selectedIds: ids }),

@@ -26,7 +26,8 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
 
   const [searchMode, setSearchMode] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [searchResults, setSearchResults] = useState<MessageItem[]>([]);
+  const searchResults = useAppStore((s) => s.searchResults);
+  const setSearchResults = useAppStore((s) => s.setSearchResults);
   const [hasSearched, setHasSearched] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -35,6 +36,11 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
   } | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const lastClickedId = useRef<number | null>(null);
+  const searchRequestRef = useRef(0);
+
+  useEffect(() => () => {
+    searchRequestRef.current++;
+  }, []);
 
   // 刷新按钮旋转状态：点击后旋转，加载完成且至少转满一圈后停止
   const [isSpinning, setIsSpinning] = useState(false);
@@ -99,35 +105,36 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
 
   // 执行搜索
   const doSearch = useCallback(async (keyword: string) => {
-    console.log('[Search] doSearch called, keyword:', keyword);
+    const request = ++searchRequestRef.current;
     if (!keyword.trim()) {
       setSearchResults([]);
       setHasSearched(false);
       return;
     }
     setHasSearched(true);
+    setSearchResults([]);
     try {
       const data = await window.electronAPI.getMessageList({
         messageId: Number.MAX_SAFE_INTEGER,
         key: keyword.trim(),
         scene: 4,
       });
-      console.log('[Search] results:', data?.length, 'items');
-      setSearchResults(data || []);
+      if (request === searchRequestRef.current) setSearchResults(data || []);
     } catch (err) {
       console.error('[Search] error:', err);
-      setSearchResults([]);
+      if (request === searchRequestRef.current) setSearchResults([]);
     }
-  }, []);
+  }, [setSearchResults]);
 
   // 退出搜索模式，刷新消息列表
   const exitSearch = useCallback(() => {
+    searchRequestRef.current++;
     setSearchMode(false);
     setSearchKeyword('');
     setSearchResults([]);
     setHasSearched(false);
     onRefresh();
-  }, [onRefresh]);
+  }, [onRefresh, setSearchResults]);
 
   // 聚焦搜索框
   useEffect(() => {
@@ -212,11 +219,13 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
       onOk: async () => {
         const store = useAppStore.getState();
         const deleted = store.messages.filter((m) => ids.includes(m.messageId));
+        const deletedSearchResults = store.searchResults;
         store.removeMessages(ids); // 同时会清掉 selectedIds 中的对应项
         try {
           await window.electronAPI.deleteMessages(ids);
         } catch {
           store.prependMessages(deleted); // 删除失败：恢复消息
+          store.setSearchResults(deletedSearchResults);
           message.error('删除失败，请稍后重试', 5);
         }
       },
@@ -324,6 +333,7 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
                 <button
                   className="search-clear-btn"
                   onClick={() => {
+                    searchRequestRef.current++;
                     setSearchKeyword('');
                     setSearchResults([]);
                     setHasSearched(false);
