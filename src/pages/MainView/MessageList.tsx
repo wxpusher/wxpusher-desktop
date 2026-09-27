@@ -320,7 +320,7 @@ export default function MessageList({ onSelect, selectedMessageId, onLoadMore, o
               <input
                 ref={searchInputRef}
                 className="search-input"
-                placeholder="搜索消息内容、发送方"
+                placeholder="搜索消息内容"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 onKeyDown={(e) => {
