@@ -71,6 +71,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on(IPC_CHANNELS.WS_NEW_MESSAGE, handler);
     return () => ipcRenderer.removeListener(IPC_CHANNELS.WS_NEW_MESSAGE, handler);
   },
+  onPollMessages: (callback: (messages: any[]) => void) => {
+    const handler = (_: any, messages: any[]) => callback(messages);
+    ipcRenderer.on(IPC_CHANNELS.WS_POLL_MESSAGES, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.WS_POLL_MESSAGES, handler);
+  },
   onPushToken: (callback: (token: string) => void) => {
     const handler = (_: any, token: string) => callback(token);
     ipcRenderer.on(IPC_CHANNELS.WS_PUSH_TOKEN, handler);
@@ -99,13 +104,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   openNotificationSettings: () => ipcRenderer.invoke(IPC_CHANNELS.NOTIFY_OPEN_SETTINGS),
   onNotificationClick: (callback: (messageId: number) => void) => {
-    ipcRenderer.on(IPC_CHANNELS.NOTIFY_CLICK, (_, id) => callback(id));
+    const handler = (_: any, id: number) => callback(id);
+    ipcRenderer.on(IPC_CHANNELS.NOTIFY_CLICK, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.NOTIFY_CLICK, handler);
   },
 
   // 主题
   getTheme: () => ipcRenderer.invoke(IPC_CHANNELS.THEME_GET),
   onThemeChanged: (callback: (isDark: boolean) => void) => {
-    ipcRenderer.on(IPC_CHANNELS.THEME_CHANGED, (_, isDark) => callback(isDark));
+    const handler = (_: any, isDark: boolean) => callback(isDark);
+    ipcRenderer.on(IPC_CHANNELS.THEME_CHANGED, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.THEME_CHANGED, handler);
   },
 
   // 偏好

@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAppStore } from './stores/appStore';
 import LoginView from './pages/LoginView';
 import MainView from './pages/MainView';
+import type { LoginInfo } from './types';
 
 function LoginRoute() {
   const isLogged = useAppStore((s) => s.isLogged);
@@ -19,7 +20,8 @@ function App() {
     // 检查凭证，完成后才渲染路由
     window.electronAPI.getCredential().then((cred) => {
       if (cred?.deviceToken) {
-        useAppStore.getState().setLogged(cred);
+        // 完整用户资料会在下方异步补齐；此处只用主进程凭证恢复登录状态。
+        useAppStore.getState().setLogged(cred as LoginInfo);
         window.electronAPI.wsConnect(cred.pushToken);
         // 获取完整用户信息（uid、spt 等）
         window.electronAPI.getUserDeviceInfo().then((info) => {

@@ -42,22 +42,35 @@ function sleep(ms: number): Promise<void> {
 
 class WsManagerClass {
   private ws: WebSocket | null = null;
+  private generation = 0;
+  private shouldReconnect = false;
   private status: WsStatusValue = WS_STATUS.NotConnect;
   private pushToken: string | null = null;
   private retryCount = 0;
   private retryTimer: NodeJS.Timeout | null = null;
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private readTimeoutTimer: NodeJS.Timeout | null = null;
+  private stableConnectionTimer: NodeJS.Timeout | null = null;
   private pollTimer: NodeJS.Timeout | null = null;
+  private pollDelayTimer: NodeJS.Timeout | null = null;
+  private pollInFlight = false;
+  private networkChangeTimer: NodeJS.Timeout | null = null;
   private pushTokenReportTimer: NodeJS.Timeout | null = null;
   private disconnectSince: number | null = null;
   private networkOnline: boolean | null = null;
+  private readonly recentMessageIds = new Set<number>();
+  private readonly recentMessageOrder: number[] = [];
   private readonly RETRY_SECONDS = [5, 10, 15, 20, 30, 45, 60, 120];
   private readonly HEARTBEAT_INTERVAL = 25_000;
-  private readonly READ_TIMEOUT = 30_000; // P0: 30s 读超时，与服务端 IdleStateHandler 对齐
+  // 服务端 30s 首次空闲只探活、60s 才关闭；客户端留出代理与调度抖动余量。
+  private readonly READ_TIMEOUT = 90_000;
+  private readonly STABLE_CONNECTION_TIME = 60_000;
   private readonly PUSH_TOKEN_REPORT_INTERVAL = 60 * 60 * 1000; // 1h 定时上报兜底
 
   connect(pushToken?: string | null, forceReconnect = false): void {
+    this.shouldReconnect = true;
+    if (pushToken) this.pushToken = pushToken;
+
     if (this.networkOnline === false) {
       logger.info('WS 跳过连接: 当前网络离线');
       this.status = WS_STATUS.Offline;
@@ -70,16 +83,17 @@ class WsManagerClass {
       return;
     }
 
+    // 手动连接可能发生在退避等待期间，实际开始新连接前必须取消旧定时器。
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+
     if (forceReconnect) {
-      this.cleanup();
-      if (this.ws) {
-        this.ws.terminate();
-        this.ws = null;
-      }
+      this.invalidateCurrentSocket(true);
       this.status = WS_STATUS.NotConnect;
     }
 
-    this.pushToken = pushToken || this.pushToken;
     this.status = WS_STATUS.Connecting;
     this.notifyStatusChange();
 
@@ -89,7 +103,7 @@ class WsManagerClass {
 
     try {
       const config = PreferencesManager.getConfig();
-      this.ws = new WebSocket(url, {
+      const socket = new WebSocket(url, {
         headers: {
           'User-Agent': `WxPusher-Desktop`,
           'Origin': config.appFeUrl,
@@ -97,20 +111,23 @@ class WsManagerClass {
           'platform':getDesktopPlatform()
         },
       });
+      const generation = ++this.generation;
+      this.ws = socket;
+      let terminalHandled = false;
 
-      this.ws.on('open', () => {
+      socket.on('open', () => {
+        if (!this.isCurrent(socket, generation)) return;
         logger.info(`WS 已连接 (耗时 ${Date.now() - connectStart}ms)`);
         this.status = WS_STATUS.Connected;
-        this.retryCount = 0;
-        this.disconnectSince = null;
-        this.stopPollingFallback();
         this.notifyStatusChange();
-        this.startHeartbeat();
-        this.resetReadTimeout();
+        this.startHeartbeat(socket, generation);
+        this.resetReadTimeout(socket, generation);
+        this.scheduleStableRetryReset(socket, generation);
       });
 
-      this.ws.on('message', (data: Buffer) => {
-        this.resetReadTimeout();
+      socket.on('message', (data: Buffer) => {
+        if (!this.isCurrent(socket, generation)) return;
+        this.resetReadTimeout(socket, generation);
         const raw = data.toString();
         try {
           const msg = JSON.parse(raw);
@@ -120,26 +137,35 @@ class WsManagerClass {
         this.handleMessage(raw);
       });
 
-      // P0: 监听 pong 帧，重置读超时
-      this.ws.on('pong', () => {
-        this.resetReadTimeout();
+      // ws 库在收到服务端 Ping 时会自动回 Pong；两种控制帧都证明读链路正常。
+      socket.on('ping', () => {
+        if (this.isCurrent(socket, generation)) this.resetReadTimeout(socket, generation);
+      });
+      socket.on('pong', () => {
+        if (this.isCurrent(socket, generation)) this.resetReadTimeout(socket, generation);
       });
 
-      this.ws.on('close', (code, reason) => {
-        logger.info(`WS 断开: code=${code} reason=${reason} (连接存活 ${Date.now() - connectStart}ms)`);
+      const handleTerminal = (detail: string): void => {
+        if (terminalHandled || !this.isCurrent(socket, generation)) return;
+        terminalHandled = true;
+        logger.info(`${detail} (连接存活 ${Date.now() - connectStart}ms)`);
         this.ws = null;
-        this.cleanup();
+        this.cleanupConnectionTimers();
         this.scheduleReconnect();
+      };
+
+      socket.on('close', (code, reason) => {
+        handleTerminal(`WS 断开: code=${code} reason=${reason}`);
       });
 
-      this.ws.on('error', (err) => {
+      socket.on('error', (err) => {
         logger.warn('WS 错误:', err.message);
-        this.ws = null;
-        this.cleanup();
-        this.scheduleReconnect();
+        handleTerminal('WS 因错误断开');
+        socket.terminate();
       });
     } catch (err) {
       logger.error('WS 创建失败:', err);
+      this.cleanupConnectionTimers();
       this.scheduleReconnect();
     }
 
@@ -175,6 +201,10 @@ class WsManagerClass {
         }
         case WsMsgType.PUSH_NOTE: {
           const pushMsg = msg as WsPushNoteMsg;
+          if (this.isDuplicateMessage(pushMsg.mid)) {
+            logger.info(`PUSH_NOTE 重复消息已忽略: mid=${pushMsg.mid}`);
+            break;
+          }
           logger.info(`PUSH_NOTE 收到: mid=${pushMsg.mid} title=${pushMsg.title} summary=${pushMsg.summary?.substring(0, 50)}`);
           try {
             WindowManager.sendToRenderer('ws:new-message', pushMsg);
@@ -211,26 +241,63 @@ class WsManagerClass {
     }
   }
 
-  private startHeartbeat(): void {
+  private startHeartbeat(socket: WebSocket, generation: number): void {
+    if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
     this.heartbeatTimer = setInterval(() => {
-      if (this.ws?.readyState === WebSocket.OPEN) {
+      if (this.isCurrent(socket, generation) && socket.readyState === WebSocket.OPEN) {
         // 发送 JSON 应用层心跳 (msgType=101)，与服务端 IdleStateHandler 对齐
-        this.ws.send(JSON.stringify({ msgType: 101, createTime: Date.now() }));
+        socket.send(JSON.stringify({ msgType: 101, createTime: Date.now() }));
       }
     }, this.HEARTBEAT_INTERVAL);
   }
 
-  // P0: 读超时检测 — 30s 内无任何数据（消息/pong）则断开重连
-  private resetReadTimeout(): void {
+  private isDuplicateMessage(messageId: number): boolean {
+    if (this.recentMessageIds.has(messageId)) return true;
+    this.recentMessageIds.add(messageId);
+    this.recentMessageOrder.push(messageId);
+    if (this.recentMessageOrder.length > 512) {
+      const oldest = this.recentMessageOrder.shift();
+      if (oldest !== undefined) this.recentMessageIds.delete(oldest);
+    }
+    return false;
+  }
+
+  private resetReadTimeout(socket: WebSocket, generation: number): void {
     if (this.readTimeoutTimer) clearTimeout(this.readTimeoutTimer);
     this.readTimeoutTimer = setTimeout(() => {
+      if (!this.isCurrent(socket, generation)) return;
       logger.warn('WS 读超时，主动断开');
-      this.ws?.terminate();
+      socket.terminate();
     }, this.READ_TIMEOUT);
   }
 
+  private scheduleStableRetryReset(socket: WebSocket, generation: number): void {
+    if (this.stableConnectionTimer) clearTimeout(this.stableConnectionTimer);
+    this.stableConnectionTimer = setTimeout(() => {
+      if (!this.isCurrent(socket, generation) || this.status !== WS_STATUS.Connected) return;
+      this.retryCount = 0;
+      // 短暂 open 不代表链路已恢复；稳定满 60 秒后才终止断线降级窗口。
+      this.stopPollingFallback();
+      logger.debug('WS 稳定连接满 60 秒，重置退避次数');
+    }, this.STABLE_CONNECTION_TIME);
+  }
+
+  private isCurrent(socket: WebSocket, generation: number): boolean {
+    return this.ws === socket && this.generation === generation;
+  }
+
+  private invalidateCurrentSocket(terminate: boolean): void {
+    const socket = this.ws;
+    this.generation++;
+    this.ws = null;
+    this.cleanupConnectionTimers();
+    if (!socket) return;
+    if (terminate) socket.terminate();
+    else socket.close();
+  }
+
   private scheduleReconnect(): void {
-    if (this.status === WS_STATUS.Closing) return;
+    if (!this.shouldReconnect || this.status === WS_STATUS.Closing) return;
 
     if (this.networkOnline === false) {
       this.status = WS_STATUS.Offline;
@@ -247,9 +314,15 @@ class WsManagerClass {
       this.startPollingFallback();
     }
 
-    const delay = this.RETRY_SECONDS[Math.min(this.retryCount, this.RETRY_SECONDS.length - 1)];
+    if (this.retryTimer) return;
+    const baseDelay = this.RETRY_SECONDS[Math.min(this.retryCount, this.RETRY_SECONDS.length - 1)];
     this.retryCount++;
-    this.retryTimer = setTimeout(() => this.connect(this.pushToken), delay * 1000);
+    const delay = Math.round(baseDelay * (0.8 + Math.random() * 0.4));
+    logger.info(`WS 将在 ${delay}s 后重连 (连续失败 ${this.retryCount} 次)`);
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
+      if (this.shouldReconnect) this.connect(this.pushToken);
+    }, delay * 1000);
   }
 
   private async reportPushToken(pushToken: string): Promise<void> {
@@ -296,13 +369,12 @@ class WsManagerClass {
 
   handleNetworkOffline(): void {
     this.networkOnline = false;
-    this.cleanup();
-    this.stopPollingFallback();
-
-    if (this.ws) {
-      this.ws.terminate();
-      this.ws = null;
+    if (this.networkChangeTimer) {
+      clearTimeout(this.networkChangeTimer);
+      this.networkChangeTimer = null;
     }
+    this.stopPollingFallback();
+    this.invalidateCurrentSocket(true);
 
     if (this.status !== WS_STATUS.Offline) {
       logger.info('网络离线，WS 进入离线状态');
@@ -313,7 +385,6 @@ class WsManagerClass {
 
   handleNetworkOnline(): void {
     this.networkOnline = true;
-    this.retryCount = 0;
     if (this.retryTimer) {
       clearTimeout(this.retryTimer);
       this.retryTimer = null;
@@ -325,66 +396,77 @@ class WsManagerClass {
       return;
     }
     logger.info('网络恢复，WS 立即重连');
-    this.connect(this.pushToken, true);
+    if (this.shouldReconnect) this.connect(this.pushToken, true);
   }
 
   // 仍在线但网卡变化（换网/换 IP）：旧 socket 可能已绑在失效网卡上，
   // 必须强制重连（不走 handleNetworkOnline 在 Connected 时的跳过逻辑）。
   handleNetworkChanged(): void {
     this.networkOnline = true;
-    this.retryCount = 0;
-    if (this.retryTimer) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = null;
-    }
-    logger.info('网络变化（仍在线），WS 强制重连');
-    this.connect(this.pushToken, true);
+    if (this.networkChangeTimer) clearTimeout(this.networkChangeTimer);
+    this.networkChangeTimer = setTimeout(() => {
+      this.networkChangeTimer = null;
+      if (!this.shouldReconnect) return;
+      logger.info('网络变化稳定 2 秒，WS 强制重连');
+      this.connect(this.pushToken, true);
+    }, 2_000);
   }
 
   private startPollingFallback(): void {
-    // disconnectSince 已在 scheduleReconnect 中设置
-    setTimeout(() => {
-      if (this.status !== WS_STATUS.Connected && this.disconnectSince) {
-        this.pollTimer = setInterval(async () => {
-          if (this.status === WS_STATUS.Connected) {
-            this.stopPollingFallback();
-            return;
-          }
-          try {
-            const messages = await ApiService.getMessageList({
-              messageId: Number.MAX_SAFE_INTEGER,
-              key: '',
-              scene: 2,
-            });
-            WindowManager.sendToRenderer('poll:messages', messages);
-          } catch (e) {
-            logger.warn('降级轮询失败', e);
-          }
-        }, 60_000);
-      }
+    if (this.pollDelayTimer || this.pollTimer) return;
+    this.pollDelayTimer = setTimeout(() => {
+      this.pollDelayTimer = null;
+      if (!this.disconnectSince) return;
+
+      // 延迟到期时可能恰好处于一次尚未稳定的短连接中。轮询 timer 仍需保留，
+      // 由 pollMessages 在 Connected 时自行跳过；否则该连接再次断开后将永远失去兜底。
+      void this.pollMessages();
+      this.pollTimer = setInterval(() => void this.pollMessages(), 60_000);
     }, 180_000);
   }
 
+  private async pollMessages(): Promise<void> {
+    if (this.pollInFlight || this.status === WS_STATUS.Connected || !this.disconnectSince) return;
+    this.pollInFlight = true;
+    try {
+      const messages = await ApiService.getMessageList({
+        messageId: Number.MAX_SAFE_INTEGER,
+        key: '',
+        scene: 2,
+      });
+      if (!this.isConnected() && this.disconnectSince) {
+        WindowManager.sendToRenderer('ws:poll-messages', messages);
+      }
+    } catch (e) {
+      logger.warn('降级轮询失败', e);
+    } finally {
+      this.pollInFlight = false;
+    }
+  }
+
   private stopPollingFallback(): void {
+    if (this.pollDelayTimer) {
+      clearTimeout(this.pollDelayTimer);
+      this.pollDelayTimer = null;
+    }
     if (this.pollTimer) {
       clearInterval(this.pollTimer);
       this.pollTimer = null;
     }
+    this.pollInFlight = false;
     this.disconnectSince = null;
   }
 
   disconnect(): void {
+    this.shouldReconnect = false;
     this.status = WS_STATUS.Closing;
-    this.cleanup();
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
+    this.stopPollingFallback();
+    this.invalidateCurrentSocket(false);
     this.status = WS_STATUS.NotConnect;
     this.notifyStatusChange();
   }
 
-  private cleanup(): void {
+  private cleanupConnectionTimers(): void {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
@@ -396,6 +478,10 @@ class WsManagerClass {
     if (this.readTimeoutTimer) {
       clearTimeout(this.readTimeoutTimer);
       this.readTimeoutTimer = null;
+    }
+    if (this.stableConnectionTimer) {
+      clearTimeout(this.stableConnectionTimer);
+      this.stableConnectionTimer = null;
     }
   }
 

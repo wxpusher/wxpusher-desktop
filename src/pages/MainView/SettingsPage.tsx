@@ -88,7 +88,7 @@ export default function SettingsPage() {
 
   const loadPrefs = async () => {
     const allPrefs = await window.electronAPI.getAllPrefs();
-    setPrefs(allPrefs);
+    setPrefs(allPrefs as DesktopPrefs);
   };
 
   const updatePref = async (key: string, value: any) => {

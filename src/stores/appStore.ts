@@ -2,6 +2,15 @@ import { create } from 'zustand';
 import type { MessageItem, LoginInfo, UpdateStatus } from '../types';
 import { WS_STATUS, type WsStatusValue } from '../../electron/ipc/wsStatus';
 
+function uniqueMessages(messages: MessageItem[]): MessageItem[] {
+  const seen = new Set<number>();
+  return messages.filter((message) => {
+    if (seen.has(message.messageId)) return false;
+    seen.add(message.messageId);
+    return true;
+  });
+}
+
 interface AppState {
   // 认证
   isLogged: boolean;
@@ -81,10 +90,14 @@ export const useAppStore = create<AppState>((set) => ({
   updateLoginInfo: (info) => set((s) => ({ loginInfo: s.loginInfo ? { ...s.loginInfo, ...info } : (info as LoginInfo) })),
   logout: () => set({ isLogged: false, loginInfo: null, messages: [], selectedIds: [] }),
   setWsStatus: (status) => set({ wsStatus: status }),
-  setMessages: (msgs) => set({ messages: msgs }),
+  setMessages: (msgs) => set({ messages: uniqueMessages(msgs) }),
   appendMessages: (msgs) =>
-    set((s) => ({ messages: [...s.messages, ...msgs], hasMore: msgs.length >= 20 })),
-  prependMessages: (msgs) => set((s) => ({ messages: [...msgs, ...s.messages] })),
+    set((s) => ({
+      messages: uniqueMessages([...s.messages, ...msgs]),
+      hasMore: msgs.length >= 20,
+    })),
+  prependMessages: (msgs) =>
+    set((s) => ({ messages: uniqueMessages([...msgs, ...s.messages]) })),
   updateMessage: (id, changes) =>
     set((s) => ({
       messages: s.messages.map((m) => (m.messageId === id ? { ...m, ...changes } : m)),

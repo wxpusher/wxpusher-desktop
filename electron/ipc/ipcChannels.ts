@@ -13,6 +13,7 @@ export const IPC_CHANNELS = {
   WS_STATUS: 'ws:status',
   WS_PUSH_TOKEN: 'ws:push-token',
   WS_NEW_MESSAGE: 'ws:new-message',
+  WS_POLL_MESSAGES: 'ws:poll-messages',
   WS_ERROR: 'ws:error',
   WS_UPDATE_REQUIRED: 'ws:update-required',
   WS_HAS_PUSH_TOKEN: 'ws:has-push-token',

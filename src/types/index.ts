@@ -116,6 +116,7 @@ declare global {
         callback: (status: import('../../electron/ipc/wsStatus').WsStatusValue) => void
       ) => (() => void) | undefined;
       onNewMessage: (callback: (msg: WsPushNoteMsg) => void) => (() => void) | undefined;
+      onPollMessages: (callback: (messages: MessageItem[]) => void) => (() => void) | undefined;
       onPushToken: (callback: (token: string) => void) => (() => void) | undefined;
       onAuthExpired: (callback: () => void) => (() => void) | undefined;
       getMessageList: (params: { messageId?: number; key?: string; scene: number }) => Promise<MessageItem[]>;

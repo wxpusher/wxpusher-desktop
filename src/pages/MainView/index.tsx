@@ -25,6 +25,11 @@ export default function MainView() {
       useAppStore.getState().prependMessages([item]);
     });
 
+    // WS 长时间不可用时，主进程以 HTTP 拉取最近消息；store 按 messageId 与 WS 消息统一去重。
+    const offPoll = window.electronAPI.onPollMessages((messages) => {
+      useAppStore.getState().prependMessages(messages);
+    });
+
     // 通知点击：切回消息视图并在列表中选中该消息（选中后 MessageDetail 会自动标已读）
     const offClick = window.electronAPI.onNotificationClick((messageId) => {
       window.dispatchEvent(new CustomEvent('app:show-messages'));
@@ -111,6 +116,7 @@ export default function MainView() {
     window.addEventListener('keydown', handleKeydown);
     return () => {
       offMsg?.();
+      offPoll?.();
       offClick?.();
       offUpdate?.();
       offUpdateReq?.();
