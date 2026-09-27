@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, Menu } from 'electron';
+import { app, BrowserWindow, shell, Menu, webFrameMain } from 'electron';
 import path from 'path';
 import { WindowManager } from './managers/WindowManager';
 import { TrayManager } from './managers/TrayManager';
@@ -163,7 +163,10 @@ app.on('web-contents-created', (_, contents) => {
   contents.on('will-frame-navigate', (details) => {
     if (contents !== WindowManager.getMainWindow()?.webContents) return;
     const frame = details.frame;
-    if (details.isMainFrame || !frame || frame.parent !== contents.mainFrame) return;
+    const parent = frame?.parent;
+    const mainFrame = contents.mainFrame;
+    if (details.isMainFrame || !parent || parent.processId !== mainFrame.processId
+      || parent.routingId !== mainFrame.routingId) return;
     WindowManager.sendToRenderer(IPC_CHANNELS.IFRAME_NAVIGATE, {
       fromUrl: frame.url,
       toUrl: details.url,
@@ -181,13 +184,20 @@ app.on('web-contents-created', (_, contents) => {
   // errorCode -3 (ERR_ABORTED) 是切换消息/重试重挂 iframe 的正常中止，忽略。
   contents.on(
     'did-fail-load',
-    (_event, errorCode, errorDesc, validatedURL, isMainFrame) => {
+    (_event, errorCode, errorDesc, validatedURL, isMainFrame, frameProcessId, frameRoutingId) => {
       console.error(`[LOAD FAIL] ${errorCode}: ${errorDesc} URL: ${validatedURL}`);
       if (!isMainFrame && errorCode !== -3) {
+        const frame = webFrameMain.fromId(frameProcessId, frameRoutingId);
+        const parent = frame?.parent;
+        const mainFrame = contents.mainFrame;
+        const isDetailFrame = contents === WindowManager.getMainWindow()?.webContents
+          && parent?.processId === mainFrame.processId
+          && parent?.routingId === mainFrame.routingId;
         WindowManager.sendToRenderer(IPC_CHANNELS.IFRAME_LOAD_FAIL, {
           url: validatedURL,
           errorCode,
           errorDescription: errorDesc,
+          isDetailFrame,
         });
       }
     }

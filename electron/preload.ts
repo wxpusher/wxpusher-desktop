@@ -162,11 +162,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // 详情 iframe 加载失败（主进程 did-fail-load 桥接，真实网络失败即时上报）
   onFrameLoadFail: (
-    callback: (data: { url: string; errorCode: number; errorDescription: string }) => void
+    callback: (data: { url: string; errorCode: number; errorDescription: string; isDetailFrame?: boolean }) => void
   ) => {
     const handler = (
       _: unknown,
-      data: { url: string; errorCode: number; errorDescription: string }
+      data: { url: string; errorCode: number; errorDescription: string; isDetailFrame?: boolean }
     ) => callback(data);
     ipcRenderer.on(IPC_CHANNELS.IFRAME_LOAD_FAIL, handler);
     return () => ipcRenderer.removeListener(IPC_CHANNELS.IFRAME_LOAD_FAIL, handler);

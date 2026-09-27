@@ -125,7 +125,7 @@ export default function MessageDetail({ message }: Props) {
     });
     // net 错误 / HTTP>=400 即时进入错误态；Chromium 错误页随后触发的 onLoad 不会覆盖失败。
     const off = window.electronAPI.onFrameLoadFail((data) => {
-      if (isKnownUrl(data.url)) {
+      if (data.isDetailFrame || isKnownUrl(data.url)) {
         failedGenRef.current = gen;
         settle('error', gen);
       }

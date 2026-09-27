@@ -10,21 +10,34 @@ export function setupCsp(): void {
   // - 真实 net 错误（DNS/连接/断网/超时）→ onErrorOccurred（ERR_ABORTED 是正常中止，忽略）
   // - HTTP 错误状态（如 502/404/500，did-fail-load 不触发）→ onCompleted status>=400
   // 复用 IFRAME_LOAD_FAIL 通道，渲染层据此即时进入失败界面（见 MessageDetail）。
-  const reportFrameFail = (url: string, errorCode: number, errorDescription: string) => {
+  const reportFrameFail = (
+    url: string,
+    errorCode: number,
+    errorDescription: string,
+    isDetailFrame: boolean
+  ) => {
     WindowManager.sendToRenderer(IPC_CHANNELS.IFRAME_LOAD_FAIL, {
       url,
       errorCode,
       errorDescription,
+      isDetailFrame,
     });
+  };
+  const isDetailFrame = (details: { webContents?: Electron.WebContents; frame?: Electron.WebFrameMain | null }) => {
+    const contents = WindowManager.getMainWindow()?.webContents;
+    const parent = details.frame?.parent;
+    return !!contents && details.webContents === contents
+      && parent?.processId === contents.mainFrame.processId
+      && parent?.routingId === contents.mainFrame.routingId;
   };
   session.defaultSession.webRequest.onErrorOccurred((details) => {
     if (details.resourceType === 'subFrame' && details.error !== 'net::ERR_ABORTED') {
-      reportFrameFail(details.url, -1, details.error);
+      reportFrameFail(details.url, -1, details.error, isDetailFrame(details));
     }
   });
   session.defaultSession.webRequest.onCompleted((details) => {
     if (details.resourceType === 'subFrame' && details.statusCode >= 400) {
-      reportFrameFail(details.url, details.statusCode, `HTTP ${details.statusCode}`);
+      reportFrameFail(details.url, details.statusCode, `HTTP ${details.statusCode}`, isDetailFrame(details));
     }
   });
 
