@@ -159,6 +159,16 @@ app.on('web-contents-created', (_, contents) => {
 
 // Debug: capture renderer errors
 app.on('web-contents-created', (_, contents) => {
+  // 详情 iframe 中的链接可能跳到其他域名；把本框架的导航目标交给渲染层关联加载错误。
+  contents.on('will-frame-navigate', (details) => {
+    if (contents !== WindowManager.getMainWindow()?.webContents) return;
+    const frame = details.frame;
+    if (details.isMainFrame || !frame || frame.parent !== contents.mainFrame) return;
+    WindowManager.sendToRenderer(IPC_CHANNELS.IFRAME_NAVIGATE, {
+      fromUrl: frame.url,
+      toUrl: details.url,
+    });
+  });
   contents.on('console-message', (_event, level, message, line, sourceId) => {
     const levels = ['verbose', 'info', 'warning', 'error'];
     // 仅 error/warn 级别转发，避免 renderer 高频 debug 日志撑爆文件

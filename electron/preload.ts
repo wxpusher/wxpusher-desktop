@@ -171,6 +171,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on(IPC_CHANNELS.IFRAME_LOAD_FAIL, handler);
     return () => ipcRenderer.removeListener(IPC_CHANNELS.IFRAME_LOAD_FAIL, handler);
   },
+  onFrameNavigate: (callback: (data: { fromUrl: string; toUrl: string }) => void) => {
+    const handler = (_: unknown, data: { fromUrl: string; toUrl: string }) => callback(data);
+    ipcRenderer.on(IPC_CHANNELS.IFRAME_NAVIGATE, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.IFRAME_NAVIGATE, handler);
+  },
 
   // 平台信息
   getPlatform: () => ipcRenderer.invoke('system:get-platform'),

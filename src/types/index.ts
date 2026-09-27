@@ -148,6 +148,9 @@ declare global {
       onFrameLoadFail: (
         callback: (data: { url: string; errorCode: number; errorDescription: string }) => void
       ) => (() => void) | undefined;
+      onFrameNavigate: (
+        callback: (data: { fromUrl: string; toUrl: string }) => void
+      ) => (() => void) | undefined;
       getPlatform: () => Promise<string>;
       isPackaged: () => Promise<boolean>;
       openExternal: (url: string) => Promise<void>;

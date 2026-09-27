@@ -29,6 +29,7 @@ export default function MessageDetail({ message }: Props) {
   const loadGenRef = useRef(0);
   // did-fail-load 已判定失败的加载代次：此后该次加载的错误页 onLoad 不能再翻回成功
   const failedGenRef = useRef(-1);
+  const frameUrlsRef = useRef<Set<string>>(new Set());
   // 上一次展示的消息 ID：自动标已读只在切换到「不同消息」时触发一次
   const displayedIdRef = useRef<number | null>(null);
 
@@ -40,6 +41,7 @@ export default function MessageDetail({ message }: Props) {
   // 切换消息 / url / 重试时重置加载状态机与定时器
   useEffect(() => {
     if (!message || !message.url) {
+      frameUrlsRef.current.clear();
       setStatus('loaded');
       setShowBar(false);
       return;
@@ -49,6 +51,7 @@ export default function MessageDetail({ message }: Props) {
     clearTimeout(timeoutTimerRef.current);
     shownAtRef.current = 0;
     const gen = ++loadGenRef.current;
+    frameUrlsRef.current = new Set([message.url]);
     setStatus('loading');
 
     const isRetry = isRetryRef.current;
@@ -101,28 +104,36 @@ export default function MessageDetail({ message }: Props) {
     settleTimerRef.current = setTimeout(() => setStatus(next), wait);
   };
 
-  // 订阅主进程上报的 iframe 加载失败（net 错误 / HTTP>=400），即时进入错误态，无需等兜底超时
+  // 记录详情 iframe 自身的链接导航；跨域跳转失败时仍能关联到当前消息。
   useEffect(() => {
     const url = message?.url;
     if (!url) return;
     const gen = loadGenRef.current;
-    // 关联失败事件与当前消息：上报 URL 可能被规范化（末尾斜杠/大小写等），
-    // 严格相等会漏判；放宽到同源即可命中本页失败，又能排除跨源广告/三方子框架的失败。
-    const isThisFrame = (failedUrl: string) => {
-      if (failedUrl === url) return true;
+    const isKnownUrl = (candidate: string) => {
+      if (frameUrlsRef.current.has(candidate)) return true;
       try {
-        return new URL(failedUrl).origin === new URL(url).origin;
+        const origin = new URL(candidate).origin;
+        return [...frameUrlsRef.current].some((known) => new URL(known).origin === origin);
       } catch {
         return false;
       }
     };
+    const offNavigate = window.electronAPI.onFrameNavigate(({ fromUrl, toUrl }) => {
+      if (loadGenRef.current === gen && isKnownUrl(fromUrl)) {
+        frameUrlsRef.current.add(toUrl);
+      }
+    });
+    // net 错误 / HTTP>=400 即时进入错误态；Chromium 错误页随后触发的 onLoad 不会覆盖失败。
     const off = window.electronAPI.onFrameLoadFail((data) => {
-      if (isThisFrame(data.url)) {
+      if (isKnownUrl(data.url)) {
         failedGenRef.current = gen;
         settle('error', gen);
       }
     });
-    return () => off?.();
+    return () => {
+      offNavigate?.();
+      off?.();
+    };
   }, [iframeKey]);
 
   // 自动标已读

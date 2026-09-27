@@ -22,6 +22,7 @@ export const IPC_CHANNELS = {
   NETWORK_RENDERER_CONNECTION_CHANGED: 'network:renderer-connection-changed',
   NETWORK_STATUS: 'network:status',
   IFRAME_LOAD_FAIL: 'iframe:load-fail',
+  IFRAME_NAVIGATE: 'iframe:navigate',
 
   // 消息
   MSG_LIST: 'msg:list',
