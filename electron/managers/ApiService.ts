@@ -5,6 +5,7 @@ import { WindowManager } from './WindowManager';
 import { WsManager } from './WsManager';
 import { getDesktopPlatform, getAppVersion } from '../utils/platform';
 import { logger } from '../utils/logger';
+import StringUtil from '../utils/StringUtil';
 
 interface ApiResponse<T> {
   code: number;
@@ -41,7 +42,8 @@ function truncate(value: unknown, max = 2000): string {
     str = String(value);
   }
   if (str == null) return '';
-  return str.length > max ? `${str.slice(0, max)}…(${str.length} chars)` : str;
+  // 后缀带原始长度，便于排查，不套用 getStringLessLengthWithDot
+  return str.length > max ? `${StringUtil.getStringLessLength(str, max)}…(${str.length} chars)` : str;
 }
 
 export class ApiService {
