@@ -72,6 +72,7 @@ wxpusher-desktop/
 │       ├── csp.ts                # CSP 配置
 │       ├── linuxAutoLaunch.ts    # Linux XDG 开机自启
 │       ├── platform.ts           # 平台和资源路径工具
+│       ├── StringUtil.ts         # 字符串截断（不切开 emoji，和服务端 StringUtil 同名同规则）
 │       └── logger.ts             # 日志工具
 └── src/
     ├── main.tsx                  # React 入口
@@ -97,6 +98,7 @@ npm run dev                         # 启动开发环境
 npm run build                       # TypeScript + Vite 构建
 npm run preview                     # 预览 Vite 构建产物
 npm run electron:build              # 构建桌面安装包
+npm run test:unit                   # 纯逻辑单测（Node 22 自带 node:test + 类型剥离，不需要装依赖）
 ```
 
 开发模式默认连接测试环境：
@@ -124,5 +126,7 @@ appFeUrl = https://wxpusher.zjiecode.com
 - `WindowManager` 关闭窗口的默认行为是隐藏到后台，真正退出需设置 `app.isQuitting`
 - 修改 WebSocket 消息结构时，需要同步评估 `wxpusher-server/ws-connect` 的 `WsPushNoteMsg`
 - 修改 H5 桥接协议时，需要同步评估 `wxpusher-app-fe` 的桥接接口
-- 当前没有独立测试脚本，提交前至少运行 `npm run build`
+- 截断要展示给用户的字符串（通知正文、标题、摘要）用 `electron/utils/StringUtil.getStringLessLength`，不要直接 `slice` / `substring`：表情、生僻字占 2 个 UTF-16 码元，切在中间会显示成乱码。规则和服务端一致，说明见 `wxpusher-server/doc/string-utils.md`
+- 纯逻辑单测放在被测文件旁边，命名 `*.test.ts`，用 `node:test` + `node:assert/strict`，import 带 `.ts` 后缀，由 `npm run test:unit` 运行；不依赖 Electron 运行时
+- 提交前至少运行 `npm run test:unit` 和 `npm run build`
 - 开发调试主窗口 DevTools 需显式设置 `ELECTRON_OPEN_DEVTOOLS=1`

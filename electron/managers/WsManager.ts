@@ -6,6 +6,7 @@ import { NotificationManager } from './NotificationManager';
 import { ApiService } from './ApiService';
 import { getDesktopPlatform, getAppVersion } from '../utils/platform';
 import { logger } from '../utils/logger';
+import StringUtil from '../utils/StringUtil';
 import { WS_STATUS, type WsStatusValue } from '../ipc/wsStatus';
 
 enum WsMsgType {
@@ -205,7 +206,7 @@ class WsManagerClass {
             logger.info(`PUSH_NOTE 重复消息已忽略: mid=${pushMsg.mid}`);
             break;
           }
-          logger.info(`PUSH_NOTE 收到: mid=${pushMsg.mid} title=${pushMsg.title} summary=${pushMsg.summary?.substring(0, 50)}`);
+          logger.info(`PUSH_NOTE 收到: mid=${pushMsg.mid} title=${pushMsg.title} summary=${StringUtil.getStringLessLength(pushMsg.summary ?? '', 50)}`);
           try {
             WindowManager.sendToRenderer('ws:new-message', pushMsg);
             logger.debug('PUSH_NOTE 已发送到 renderer');
@@ -215,7 +216,7 @@ class WsManagerClass {
           try {
             NotificationManager.showNotification({
               title: pushMsg.title || 'WxPusher',
-              body: pushMsg.summary?.substring(0, 100) || '',
+              body: StringUtil.getStringLessLength(pushMsg.summary ?? '', 100),
               messageId: pushMsg.mid,
             });
             logger.debug('PUSH_NOTE 通知已调用');
