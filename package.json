@@ -9,6 +9,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "test:unit": "node --experimental-strip-types --test \"electron/**/*.test.ts\"",
     "electron:dev": "vite --config vite.config.ts",
     "electron:build": "vite build && electron-builder",
     "electron:build:mac": "vite build && electron-builder --mac",
