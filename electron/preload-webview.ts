@@ -11,7 +11,13 @@ const wxPusherApi = {
   getLoginInfo: (): Promise<any> => {
     return ipcRenderer.invoke('bridge:get-login-info');
   },
-  getEnvBaseUrl: (): Promise<{ apiBaseUrl?: string; appFeBaseUrl?: string }> => {
+  getEnvBaseUrl: (): Promise<{
+    apiBaseUrl?: string;
+    appFeBaseUrl?: string;
+    platform?: string;
+    versionName?: string;
+    frameSafe?: boolean;
+  }> => {
     return ipcRenderer.invoke('bridge:get-env-base-url');
   },
   openUrl: (url: string) => {

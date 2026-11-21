@@ -1,4 +1,4 @@
-import { ipcMain, app, shell } from 'electron';
+import { ipcMain, app, shell, IpcMainInvokeEvent } from 'electron';
 import { IPC_CHANNELS } from './ipcChannels';
 import { ApiService } from '../managers/ApiService';
 import { CredentialManager } from '../managers/CredentialManager';
@@ -45,6 +45,27 @@ const WRITABLE_PREF_KEYS = new Set([
   'onboardingCompleted',
   'keymap',
 ]);
+
+/**
+ * H5 桥接（bridge:*）只接受 BrowserView 主 frame 的调用。
+ * preload-webview 本来就只在主 frame 执行，这里是纵深防御：消息详情页正文放在沙箱 iframe 里，
+ * 不能让子 frame 拿到登录信息（monorepo docs/message-detail-sandbox-design.md 第 6.6 节 D1）。
+ */
+function isMainFrameSender(event: IpcMainInvokeEvent): boolean {
+  const frame = event.senderFrame;
+  const mainFrame = event.sender.mainFrame;
+  return !!frame && frame.processId === mainFrame.processId && frame.routingId === mainFrame.routingId;
+}
+
+function handleBridge(channel: string, handler: (event: IpcMainInvokeEvent, ...args: any[]) => any): void {
+  ipcMain.handle(channel, (event, ...args) => {
+    if (!isMainFrameSender(event)) {
+      logger.warn(`[bridge] 拒绝非主 frame 的调用: ${channel}, url=${event.senderFrame?.url ?? ''}`);
+      return undefined;
+    }
+    return handler(event, ...args);
+  });
+}
 
 export function registerIpcHandlers(): void {
   // 认证
@@ -285,7 +306,7 @@ export function registerIpcHandlers(): void {
   });
 
   // WebView 桥接
-  ipcMain.handle('bridge:get-login-info', async () => {
+  handleBridge('bridge:get-login-info', async () => {
     const credential = await CredentialManager.getCredential();
     const userInfo = await ApiService.getUserDeviceInfo().catch(() => null);
     return {
@@ -299,19 +320,24 @@ export function registerIpcHandlers(): void {
     };
   });
 
-  ipcMain.handle('bridge:get-env-base-url', () => {
+  handleBridge('bridge:get-env-base-url', () => {
     const config = PreferencesManager.getConfig();
     return {
       apiBaseUrl: config.baseUrl,
       appFeBaseUrl: config.appFeUrl,
+      // app-fe 内嵌消息详情页时据此传 wxpClient（monorepo docs/message-detail-sandbox-design.md 第 6.10 节）。
+      // 桥只在主 frame 可用（preload 只在主 frame 执行，另有 handleBridge 校验），所以 frameSafe 恒为 true
+      platform: 'Desktop',
+      versionName: getAppVersion(),
+      frameSafe: true,
     };
   });
 
-  ipcMain.handle('bridge:show-toast', (_, msg: string) => {
+  handleBridge('bridge:show-toast', (_, msg: string) => {
     WindowManager.sendToRenderer('toast:show', msg);
   });
 
-  ipcMain.handle('bridge:open-url', (_, url: string) => {
+  handleBridge('bridge:open-url', (_, url: string) => {
     const WHITELIST_HOSTS = [
       'wxpusher.zjiecode.com',
       'wxpusher.test.zjiecode.com',
@@ -331,7 +357,7 @@ export function registerIpcHandlers(): void {
     }
   });
 
-  ipcMain.handle('bridge:open-page-by-route', (_, route: string) => {
+  handleBridge('bridge:open-page-by-route', (_, route: string) => {
     const config = PreferencesManager.getConfig();
     WindowManager.sendToRenderer('webview:navigate', `${config.appFeUrl}/app#${route}`);
   });
